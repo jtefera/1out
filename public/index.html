@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>1 Out _</title>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+
+  </head>
+  <body>
+    <canvas id="canva" height="1000px" width="1000px">
+
+    </canvas>
+  <script type="text/javascript">
+    var FACE_RADIUS = 10,
+        FACE_OVERLAP_PERC = 0.2,
+        FACE_HAIR_LATERAL_OVERLAP_PERC = 0.3,
+        FACE_COLORS = {
+          LIGHT: [
+                    "blanchedalmond",
+                    "rgb(255,224,189)",
+                    "rgb(255,205,148)"
+                  ],
+          DARK: [
+                  "rgb(96,57,9)",
+                  "rgb(62,43,19)",
+                  "#894c1a",
+                  "#7e4d1c",
+                  "#583512",
+                  "rgb(234,192,134)"
+                ]
+        },
+        HAIR_COLORS = {
+          BLONDE: [
+            "#CABFB1",
+            "#DCD0BA",
+            "#FFF5E1",
+            "#E6CEA8",
+            "#E5C8A8",
+            "#DEBC99",
+            "#B89778"
+          ],
+          BROWN: [
+            "#090806",
+            "#2C222B",
+          ],
+          GRAY: [
+            "#2C222B",
+            "#B7A69E",
+            "#D6C4C2"
+          ]
+        };
+    function drawHair(ctx, x, y, hair) {
+      var possibleHairColors = HAIR_COLORS[hair.color],
+          rdm = Math.floor(Math.random()*possibleHairColors.length),
+          hairColor = possibleHairColors[rdm];
+
+      ctx.fillStyle = hairColor;
+      ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.arc(x, y, FACE_RADIUS, 0, Math.PI, true);
+        var overlapXFaceHair = (1-FACE_HAIR_LATERAL_OVERLAP_PERC)*FACE_RADIUS;
+        var overlapYFaceHair = (1-2*FACE_HAIR_LATERAL_OVERLAP_PERC)*FACE_RADIUS;
+        ctx.lineTo(x-overlapXFaceHair, y);
+        ctx.lineTo(x-overlapXFaceHair, y-overlapYFaceHair);
+        ctx.lineTo(x+overlapXFaceHair, y-overlapYFaceHair);
+        ctx.lineTo(x+overlapXFaceHair, y);
+        ctx.fill();
+      ctx.closePath();
+    }
+    function drawFace(ctx, x, y, race, hair){
+      var possibleFaceColors = FACE_COLORS[race],
+          rdm = Math.floor(Math.random()*possibleFaceColors.length),
+          faceColor = possibleFaceColors[rdm];
+      //Base Face
+      ctx.fillStyle = faceColor;
+      ctx.beginPath();
+        //ctx.moveTo(x, y);
+        ctx.arc(x, y, FACE_RADIUS, 0, Math.PI*2, false);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      //Hair
+      drawHair(ctx, x, y, hair);
+
+    }
+    function drawMultitudes(ctx, numx, numy, x, y, race) {
+      for(var i = 0; i < numx; i++){
+        for(var j = 0; j < numy; j++){
+          var posx = x + FACE_RADIUS*2*i,
+              posy = y + FACE_RADIUS*2*j*(1-FACE_OVERLAP_PERC),
+              hair = {color: "BLONDE"};
+          drawFace(ctx, posx, posy, race, hair);
+          //drawHair(ctx, posx, posy, hair);
+        }
+      }
+    }
+    var theOne = {
+      face: "DARK",
+      hair: "BROWN"
+    }
+    var theMultitudes = {
+      face: "ALL",
+      hair: "ALL",
+      rows: 10,
+      cols: 10
+    }
+    function oneOut(ctx, x, y, theOne, theMultitudes){
+
+    }
+
+    var cv = document.getElementById("canva");
+    var ctx = cv.getContext("2d");
+    drawMultitudes(ctx, 10, 10, FACE_RADIUS, FACE_RADIUS, "LIGHT");
+    drawMultitudes(ctx, 10, 10, FACE_RADIUS, 21*FACE_RADIUS, "DARK");
+  </script>
+  </body>
+</html>
