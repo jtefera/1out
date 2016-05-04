@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Of Every!</title>
+    <script src="https://fb.me/react-15.0.2.min.js"></script>
+    <script src="https://fb.me/react-dom-15.0.2.min.js"></script>
+    <!-- Bootstrap + jQuery -->
+    <script   src="https://code.jquery.com/jquery-1.12.3.min.js"   integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ="   crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    	<script src="http://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <style>
+
+      #stage {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container" class="container-fluid">
+      <canvas id="stage" class="col-md-8 col-md-offset-2" height="100px">
+        Sorry Mate! This is only for modern browsers
+      </canvas>
+      <div id="configurator-app" class="panel panel-default col-md-4 col-md-offset-4">
+
+
+      </div>
+    </div>
+    <script type="text/jsx">
+      class Welcome extends React.Component {
+        render() {
+          return (
+            <div>
+              Welcome To You Poll Creator!
+            </div>
+          );
+        }
+      }
+      class Page extends React.Component {
+        render() {
+          switch (this.props.page) {
+            case "welcome":
+              return (
+                <Welcome />
+              );
+              break;
+            default:
+              return (
+                <div> Hola Hola </div>
+              );
+          }
+        }
+      }
+      class Pagination extends React.Component {
+        render() {
+          return (
+            <div className="btn-group">
+              <button className="btn btn-default"
+                      onClick="advance"
+              > Prev </button>
+              <button className="btn btn-default"> Next </button>
+            </div>
+          );
+        }
+      }
+      class Configurator extends React.Component {
+        pageNames = ["welcome", "hola"];
+        constructor(props) {
+          super(props);
+          this.state = {
+            pageNum: 0,
+            page: "welcome"
+          }
+        }
+        changeNumPage(variation) {
+          var newPageNum = this.state.pageNum + variation,
+              pageName = this.pageNames[newPageNum];
+          this.setState({
+            pageNum: newPageNum,
+            page: pageName
+          })
+        }
+        render() {
+          return(
+            <div className="panel-body">
+              <Page page={this.state.page} />
+              <Pagination
+                advancePage={this.advancePage.bind(this)}
+              />
+            </div>
+          );
+        }
+      }
+
+      ReactDOM.render(
+        <Configurator />,
+      document.getElementById("configurator-app"));
+    </script>
+  </body>
+</html>
