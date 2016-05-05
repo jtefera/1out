@@ -11,6 +11,10 @@
     	<script src="http://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+    <!-- Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Roboto|Caveat' rel='stylesheet' type='text/css'>
+
     <style>
       #stage {
         border: 1px solid black;
@@ -51,7 +55,7 @@
   </div>
 
     <script type="text/javascript">
-    var face_radius = 5,
+    var face_radius = 10,
         face_overlap_perc = 0.2,
         face_hair_lateral_overlap_perc = 0.3,
         face_colors = {
@@ -89,12 +93,22 @@
           ]
         },
 
-        multitudes_distance = 20,
+        //font conf
+        top_font_size = 40,
+        top_font = "roboto",
+        multitudes_font_size = 25,
+        multitudes_font = "caveat",
+
+        //distances
+        multitudes_distance = 60,
         multitudes_text_distance = 10,
+        top_font_pos_y = 40,
+
+        //Canvas conf
         cv = document.getElementById("stage"),
         ctx = cv.getContext("2d"),
-        canvas_width = 500,
-        canvas_height = 200;
+        canvas_width = 650,
+        canvas_height = 300;
 
         //Init
         (function() {
@@ -321,18 +335,24 @@
             totalRows += numRows;
           });
 
-          var typeOfPeople = options.typeOfPeople || "people",
-              cvWidth = ctx.canvas.width,
-          //horizontal center of the canvas
-              xCenterCv = ctx.width / 2,
-              //Text of the group
-              text = "Out of " + totalNum + " " + typeOfPeople,
-              textWidth = ctx.measureText(text).width;
-              //Pos of the text
-              posXText = (cvWidth - textWidth) / 2;
+
+          ctx.save();
+            ctx.font = top_font_size + "px " + top_font;
+            console.log(ctx);
+            console.log(ctx.font);
+            var typeOfPeople = options.typeOfPeople || "people",
+                cvWidth = ctx.canvas.width,
+            //horizontal center of the canvas
+                xCenterCv = ctx.width / 2,
+                //Text of the group
+                text = "Out of " + totalNum + " " + typeOfPeople,
+                textWidth = ctx.measureText(text).width;
+                //Pos of the text
+                posXText = (cvWidth - textWidth) / 2;
 
           //Main text on the center of the canvas and in the top
-          ctx.fillText(text , posXText, 20);
+            ctx.fillText(text , posXText, top_font_pos_y);
+          ctx.restore();
 
           groups.map(function(group, ix) {
             var num = group.num,
@@ -352,23 +372,26 @@
                             group.skinTone || options.skinTone,
                             group.hair || options.hair);
 
-            var xCenterMultitude = distX + width/2 - face_radius;
-            //"10 are" text
-            var firstText = group.num + " are";
-            var numAreTextWidth = ctx.measureText(firstText).width;
-            //centered with respect to the multitude graph and at a distance
-            //from the bottom
-            ctx.fillText(firstText,
-                            xCenterMultitude - numAreTextWidth / 2,
-                            y + maxHeight + multitudes_text_distance);
-            //"politicians" text
-            var secondText = group.name,
-                secondTextWidth = ctx.measureText(secondText).width;
-            //centered with respect to the multitude graph and at a distance
-            //from the bottom and the firstText
-            ctx.fillText(group.name,
-                            xCenterMultitude - secondTextWidth / 2,
-                            y + maxHeight + 10 + multitudes_text_distance);
+            ctx.save()
+              ctx.font = multitudes_font_size + "px " + multitudes_font;
+              var xCenterMultitude = distX + width/2 - face_radius;
+              //"10 are" text
+              var firstText = group.num + " are";
+              var numAreTextWidth = ctx.measureText(firstText).width;
+              //centered with respect to the multitude graph and at a distance
+              //from the bottom
+              ctx.fillText(firstText,
+                              xCenterMultitude - numAreTextWidth / 2,
+                              y + maxHeight + multitudes_text_distance);
+              //"politicians" text
+              var secondText = group.name,
+                  secondTextWidth = ctx.measureText(secondText).width;
+              //centered with respect to the multitude graph and at a distance
+              //from the bottom and the firstText
+              ctx.fillText(group.name,
+                              xCenterMultitude - secondTextWidth / 2,
+                              y + maxHeight + 10 + multitudes_font_size);
+            ctx.restore();
             //update de distX for the next multitude
             distX += multitudes_distance + width;
           });
@@ -376,11 +399,28 @@
 
         //array that will have the info that it is going to be
         //rendered for each group
-        var groups = [];
+        var groups = [
+          {
+            col:3,
+            hair:{color:"ALL"},
+            name:"Africans",
+            num: 10,
+            skinTone: "DARK"
+          },
+          {
+            col:3,
+            hair:{color:"ALL"},
+            name:"Africans",
+            num: 10,
+            skinTone: "ALL"
+          }
+        ];
 
         function draw(number, skincolor, haircolor, namegroup, e) {
           //Main function
           if(number !== undefined){
+            //number is undefined when we just want to refresh the canvas
+            //properties without adding any new group
             groups.push({
               name: namegroup,
               num: Number(number),
@@ -388,41 +428,65 @@
               skinTone: skincolor,
               hair: {color: haircolor}
             });
-            console.log("Heloos");
-            e.preventDefault();
           }
-          var cvw = ctx.canvas.width;
-          resetCanvas(ctx);
-          var totalCols = groups.reduce(function(cols, group) {
-            return cols + group.col;
-          }, 0);
-          var numGroups = groups.length;
-          var totalDrawWidth = totalCols * 2 * face_radius
-                            + (numGroups - 1) * multitudes_distance;
+          //Recize the canva in case of any update
+          cv.width = canvas_width;
+          cv.height = canvas_height;
 
-          var posx = (cvw - totalDrawWidth) / 2;
-          var maxRows = groups.reduce(function(max, group) {
-            var nrows = Math.ceil(group.num / group.col);
-            return (max > nrows) ? max : nrows;
-          }, 0);
-          var maxHeight = heightFromRows(maxRows);
-          var cvh = cv.clientHeight;
+          //Erase all the previous drawing
+          resetCanvas(ctx);
+
+          var cvw = ctx.canvas.width,
+              cvh = cv.clientHeight,
+              totalCols = groups.reduce(function(cols, group) {
+            return cols + group.col;
+          }, 0),
+              numGroups = groups.length;
+              totalDrawWidth = totalCols * 2 * face_radius
+                              + (numGroups - 1) * multitudes_distance;
+          //Posx indicates the x position of the center of the most left
+          //face of the most left multitude
+          var posx = (cvw - totalDrawWidth) / 2,
+              maxRows = groups.reduce(function(max, group) {
+                nrows = Math.ceil(group.num / group.col);
+                return (max > nrows) ? max : nrows;
+              }, 0),
+              maxHeight = heightFromRows(maxRows);
+
+          //Posy indicates the y position of the center of top face of the
+          //the most column of the most left multitude
           var posy = (cvh - maxHeight) / 2;
+
+          //Drawing the mulltides
           ofEvery(ctx, groups,
                   posx, posy,
                   {skinTone: "ALL", hair:{color:"ALL"}});
         }
 
         function updateCanva(options) {
-          console.log(groups);
-          face_radius = Number(options.face_radius) || face_radius,
-          face_overlap_perc = Number(options.face_overlap_perc) || face_overlap_perc,
-          multitudes_distance = Number(options.multitudes_distance) || multitudes_distance,
+          //Changes the main parametres of the drawing
+          //and redraws it
+          face_radius = Number(options.face_radius)
+                                  || face_radius,
+          face_overlap_perc = Number(options.face_overlap_perc)
+                                    || face_overlap_perc,
+          multitudes_distance = Number(options.multitudes_distance)
+                                      || multitudes_distance,
           multitudes_text_distance = Number(options.multitudes_text_distance)
-                                        || multitudes_text_distance;
-
-          console.log(face_radius, face_overlap_perc,
-          multitudes_distance, multitudes_text_distance, options);
+                                        || multitudes_text_distance,
+          canvas_width = Number(options.canvas_width)
+                              || canvas_width,
+          canvas_height = Number(options.canvas_height)
+                              || canvas_height,
+          top_font_size = Number(options.top_font_size)
+                                || top_font_size,
+          top_font = options.top_font || top_font,
+          top_font_pos_y = Number(options.top_font_pos_y)
+                                  || top_font_pos_y,
+          multitudes_font_size = Number(options.multitudes_font_size)
+                                || multitudes_font_size,
+          multitudes_font = options.multitudes_font
+                                || multitudes_font;
           draw();
 
         }
@@ -458,9 +522,16 @@
             namegroup: self.refs.namegroup.value
           });
         }
+        drawHandler(e) {
+            e.preventDefault();
 
+            draw( this.refs.number.value,
+                  this.refs.skincolor.value,
+                  this.refs.haircolor.value,
+                  this.refs.namegroup.value
+            );
 
-
+        }
         render () {
           return (
             <div>
@@ -516,12 +587,7 @@
                 </label>
                 <br />
               <button className="btn btn-info"
-                      onClick={draw.bind( this,
-                                          this.state.number,
-                                          this.state.skincolor,
-                                          this.state.haircolor,
-                                          this.state.namegroup
-                                        )}>
+                      onClick={this.drawHandler.bind(this)}>
                   Add Group!
               </button>
               </form>
@@ -530,27 +596,30 @@
         }
       }
 
-      class CanvaConfigurator extends React.Component {
+      class DimensionsConfigurator extends React.Component {
         constructor(props) {
           super(props);
           this.state = {
-            multitudesdistance: 20,
-            faceradius: 5,
-            canvaswidth: 300
+            multitudesdistance: multitudes_distance,
+            faceradius: face_radius,
+            canvaswidth: canvas_width,
+            canvasheight: canvas_height,
           }
         }
         changeHandler(e) {
           var self = this;
           var state = this.state;
           updateCanva({
-            multitudes_distance: state.multitudesdistance,
-            face_radius: state.faceradius,
-            canvas_width: state.canvaswidth
+            multitudes_distance: self.refs.multitudesdistance.value,
+            face_radius: self.refs.faceradius.value,
+            canvas_width: self.refs.canvaswidth.value,
+            canvas_height: self.refs.canvasheight.value,
           });
           this.setState({
             multitudesdistance: self.refs.multitudesdistance.value,
             faceradius: self.refs.faceradius.value,
-            canvaswidth: self.refs.canvaswidth.value
+            canvaswidth: self.refs.canvaswidth.value,
+            canvasheight: self.refs.canvasheight.value,
           });
         }
 
@@ -558,18 +627,38 @@
           return (
             <div>
               <form>
-              <label for="canvaswidth">
-                Distance between groups
-                <input
-                  type="number"
-                  step={5}
-                  ref="canvaswidth"
-                  value={this.state.canvaswidth}
-                  onChange={this.changeHandler.bind(this)}
-                />
-              </label>
+                <label for="canvaswidth">
+                  Canvas Width
+                  <input
+                    type="number"
+                    step={5}
+                    ref="canvaswidth"
+                    value={this.state.canvaswidth}
+                    onChange={this.changeHandler.bind(this)}
+                  />
+                </label>
+                <label for="canvasheight">
+                  Canvas Height
+                  <input
+                    type="number"
+                    step={5}
+                    ref="canvasheight"
+                    value={this.state.canvasheight}
+                    onChange={this.changeHandler.bind(this)}
+                  />
+                </label>
+                <hr />
+                <label for="faceradius">
+                  Face radius<br />
+                  <input
+                    type="number"
+                    ref="faceradius"
+                    value={this.state.faceradius}
+                    onChange={this.changeHandler.bind(this)}
+                  />
+                </label>
                 <label for="multitudesdistance">
-                  Distance between groups
+                  Distance between groups<br />
                   <input
                     type="number"
                     ref="multitudesdistance"
@@ -577,14 +666,96 @@
                     onChange={this.changeHandler.bind(this)}
                   />
                 </label>
-                <label for="faceradius">
-                  Face radius:
+              </form>
+            </div>
+          )
+        }
+      }
+      class FontsConfigurator extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {
+            topfont: top_font,
+            topfontsize: top_font_size,
+            multitudesfontsize: multitudes_font_size,
+            topfontposy: top_font_pos_y
+          }
+        }
+        changeHandler(e) {
+          var self = this;
+          var state = this.state;
+          updateCanva({
+            top_font_size:  self.refs.topfontsize.value,
+            multitudes_font_size:  self.refs.multitudesfontsize.value,
+            top_font: self.refs.topfont.value,
+            multitudes_font: self.refs.multitudesfont.value,
+            top_font_pos_y: self.refs.topfontposy.value
+          });
+          this.setState({
+            topfontsize:  self.refs.topfontsize.value,
+            topfont: self.refs.topfont.value,
+            multitudesfontsize:  self.refs.multitudesfontsize.value,
+            multitudesfont: self.refs.multitudesfont.value,
+            topfontposy: self.refs.topfontposy.value
+          });
+        }
+
+        render() {
+          return (
+            <div>
+              <form>
+                <label for="topfontsize">
+                  Font size of the top text<br />
                   <input
                     type="number"
-                    ref="faceradius"
-                    value={this.state.faceradius}
+                    ref="topfontsize"
+                    value={this.state.topfontsize}
                     onChange={this.changeHandler.bind(this)}
                   />
+                </label>
+                <label for="topfont">
+                  Font of the top text<br />
+                  <select
+                    ref="topfont"
+                    value={this.state.topfont}
+                    onChange={this.changeHandler.bind(this)}
+                  >
+                    <option value="roboto"> Roboto </option>
+                    <option value="caveat"> Caveat </option>
+                    <option value="arial"> Arial </option>
+                    <option value="serif"> Serif </option>
+                  </select>
+                </label>
+                <label for="topfontposy">
+                  Vertical position of the top<br />
+                  <input
+                    type="number"
+                    ref="topfontposy"
+                    value={this.state.topfontposy}
+                    onChange={this.changeHandler.bind(this)}
+                  />
+                </label>
+                <label for="multitudesfontsize">
+                  Font size of text under each multitude<br />
+                  <input
+                    type="number"
+                    ref="multitudesfontsize"
+                    value={this.state.multitudesfontsize}
+                    onChange={this.changeHandler.bind(this)}
+                  />
+                </label>
+                <label for="multitudesfont">
+                  Font of the multitudes text<br />
+                  <select
+                    ref="multitudesfont"
+                    value={this.state.multitudesfont}
+                    onChange={this.changeHandler.bind(this)}
+                  >
+                    <option value="roboto"> Roboto </option>
+                    <option value="caveat"> Caveat </option>
+                    <option value="arial"> Arial </option>
+                    <option value="serif"> Serif </option>
+                  </select>
                 </label>
               </form>
             </div>
@@ -604,11 +775,16 @@
                 <DefineGroup />
               );
               break;
-            case "canvaconfigurator":
+            case "dimensionsconfigurator":
                 return (
-                  <CanvaConfigurator />
+                  <DimensionsConfigurator />
                 );
                 break;
+            case "fontsconfigurator":
+              return (
+                <FontsConfigurator />
+              );
+              break;
             default:
               return (
                 <div> Hola Hola </div>
@@ -635,10 +811,14 @@
         constructor(props) {
           super(props);
           this.state = {
-            pageNum: 1,
-            page: "definegroup"
+            pageNum: 2,
+            page: "dimensionsconfigurator"
           }
-          this.pageNames = ["welcome", "definegroup", "canvaconfigurator"];
+          this.pageNames = ["welcome",
+                            "definegroup",
+                            "dimensionsconfigurator",
+                            "fontsconfigurator"
+                          ];
         }
         changeNumPage(variation) {
           var newPageNum = this.state.pageNum + variation,
