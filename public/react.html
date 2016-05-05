@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <title>Of Every!</title>
-    <script src="https://fb.me/react-15.0.2.min.js"></script>
-    <script src="https://fb.me/react-dom-15.0.2.min.js"></script>
+    <script src="https://fb.me/react-15.0.2.js"></script>
+    <script src="https://fb.me/react-dom-15.0.2.js"></script>
     <!-- Bootstrap + jQuery -->
     <script   src="https://code.jquery.com/jquery-1.12.3.min.js"   integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ="   crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
@@ -12,22 +12,292 @@
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <style>
-
       #stage {
         border: 1px solid black;
+        margin-top: 50px;
       }
+      .navBtn {
+        width: 100%;
+        height: 100%;
+        background-color: none;
+        border: none;
+      }
+      .panel, .latCol, .panel-body {
+        padding: 0;
+      }
+      .panel {
+        min-height: 100px;
+      }
+      .cenCol {
+        margin: 10px auto;
+      }
+      #container {
+        text-align: center;
+      }
+
     </style>
   </head>
   <body>
-    <div id="container" class="container-fluid">
-      <canvas id="stage" class="col-md-8 col-md-offset-2" height="100px">
+    <div id="container">
+      <canvas id="stage" width="500" height="100">
         Sorry Mate! This is only for modern browsers
       </canvas>
+      <div class="container-fixed">
       <div id="configurator-app" class="panel panel-default col-md-4 col-md-offset-4">
 
 
       </div>
     </div>
+  </div>
+
+    <script type="text/javascript">
+    var FACE_RADIUS = 5,
+        FACE_OVERLAP_PERC = 0.2,
+        FACE_HAIR_LATERAL_OVERLAP_PERC = 0.3,
+        FACE_COLORS = {
+          LIGHT: [
+                    "blanchedalmond",
+                    "rgb(255,224,189)",
+                    "rgb(255,205,148)"
+                  ],
+          DARK: [
+                  "rgb(96,57,9)",
+                  "rgb(62,43,19)",
+                  "#894c1a",
+                  "#7e4d1c",
+                  "#583512"
+                ]
+        },
+        HAIR_COLORS = {
+          BLONDE: [
+            "#CABFB1",
+            "#DCD0BA",
+            "#FFF5E1",
+            "#E6CEA8",
+            "#E5C8A8",
+            "#DEBC99",
+            "#B89778"
+          ],
+          BROWN: [
+            "#090806",
+            "#2C222B",
+          ],
+          GRAY: [
+            "#2C222B",
+            "#B7A69E",
+            "#D6C4C2"
+          ]
+        },
+        MULTITUDES_DISTANCE = 20,
+        MULTITUDES_TEXT_DISTANCE = 10;
+
+        function drawHair(ctx, x, y, hair) {
+          hair = hair || {};
+          if(!hair.color || hair.color.toLowerCase()=="all") {
+            var possibleHairColors = joinedCategories(HAIR_COLORS, true)
+          } else {
+            var possibleHairColors = HAIR_COLORS[hair.color]
+          }
+          var rdm = Math.floor(Math.random()*possibleHairColors.length),
+              hairColor = possibleHairColors[rdm];
+
+          ctx.fillStyle = hairColor;
+          ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.arc(x, y, FACE_RADIUS, 0, Math.PI, true);
+            var overlapXFaceHair = (1-FACE_HAIR_LATERAL_OVERLAP_PERC)*FACE_RADIUS;
+            var overlapYFaceHair = (1-2*FACE_HAIR_LATERAL_OVERLAP_PERC)*FACE_RADIUS;
+            ctx.lineTo(x-overlapXFaceHair, y);
+            ctx.lineTo(x-overlapXFaceHair, y-overlapYFaceHair);
+            ctx.lineTo(x+overlapXFaceHair, y-overlapYFaceHair);
+            ctx.lineTo(x+overlapXFaceHair, y);
+            ctx.fill();
+          ctx.closePath();
+        }
+
+        function repeatArr(arr, times) {
+          var totalArr = [];
+          for(var i = 0; i < times; i ++){
+            totalArr = totalArr.concat(arr);
+          }
+          return totalArr;
+        }
+        function joinedCategories(category, distributed) {
+          if(distributed){
+            var mcm = Object.keys(category).reduce(function(tot, subcategory) {
+              return tot * category[subcategory].length;
+            }, 1);
+            return Object.keys(category).reduce(function(tot, subcategory) {
+              return tot.concat(
+                repeatArr(category[subcategory], mcm / category[subcategory].length)
+              );
+            }, []);
+
+          } else {
+            return Object.keys(category).reduce(function(tot, subcategory) {
+              return tot.concat(category[subcategory]);
+            }, []);
+          }
+        }
+
+        function drawFace(ctx, x, y, skinTone, hair){
+          if(!skinTone || skinTone.toLowerCase()=="all") {
+            var possibleFaceColors = joinedCategories(FACE_COLORS, true)
+          } else {
+            var possibleFaceColors = FACE_COLORS[skinTone];
+          }
+
+          var rdm = Math.floor(Math.random()*possibleFaceColors.length),
+              faceColor = possibleFaceColors[rdm];
+
+          //Base Face
+            ctx.save();
+            ctx.fillStyle = faceColor;
+            ctx.beginPath();
+              //ctx.moveTo(x, y);
+              ctx.arc(x, y, FACE_RADIUS, 0, Math.PI*2, false);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            //Hair
+            ctx.globalCompositeOperation = "source-over";
+            drawHair(ctx, x, y, hair);
+            ctx.restore();
+        }
+
+        function drawMultitudes(ctx, num, col, x, y, skinTone, hair) {
+          var distanceY = 2*FACE_RADIUS*(1-FACE_OVERLAP_PERC);
+          var maxRow = Math.ceil(num/col);
+          var height = (maxRow - 1)*distanceY;
+          ctx.save();
+          ctx.globalCompositeOperation = "destination-over";
+          for(var r = 0; num !== 0; r++ ) {
+            for(var c = 0; c < col && num !== 0; c ++) {
+              var posx = x + FACE_RADIUS*2*c,
+                  posy = y + height - FACE_RADIUS*2*r*(1-FACE_OVERLAP_PERC);
+              drawFace(ctx, posx, posy, skinTone, hair);
+              num--;
+            }
+          }
+          ctx.restore();
+
+        }
+
+        function oneOut(ctx, num, col, x, y, skinTone) {
+          var hair = {color: "BLONDE"};
+          var distanceY = 2*FACE_RADIUS*(1-FACE_OVERLAP_PERC);
+          var maxRow = Math.ceil(num/col);
+          var height = (maxRow - 1)*distanceY;
+          var width = 2*FACE_RADIUS*col;
+          drawFace(ctx, x, y + height/2, skinTone, hair);
+          ctx.font = "30px Arial";
+          var text = ctx.measureText("out");
+          ctx.fillText("out",
+                       x + FACE_RADIUS + (MULTITUDES_DISTANCE - text.width)/2,
+                       8 + y + height/2);
+          drawMultitudes(ctx, num, col,
+                          x + MULTITUDES_DISTANCE + 2 * FACE_RADIUS , y, skinTone)
+          var textW = ctx.measureText(num).width;
+          ctx.fillText(num,
+                       x + MULTITUDES_DISTANCE +  FACE_RADIUS + (width - textW) /2 ,
+                       40 + y + height);
+        }
+
+        function heightFromRows(n_rows) {
+          var distanceY = 2*FACE_RADIUS*(1-FACE_OVERLAP_PERC);
+          return 2*FACE_RADIUS + (n_rows - 1) * distanceY;
+        }
+
+        function ofEvery(ctx, groups, x, y, options) {
+          options = options || {};
+          var hair = options.hair;
+          var distanceY = 2*FACE_RADIUS*(1-FACE_OVERLAP_PERC);
+          var distX = x;
+
+          var maxHeight = 0,
+              totalNum = 0,
+              totalRows = 0;
+
+          groups.forEach(function(group) {
+            var numRows = Math.ceil(group.num / group.col);
+            var heightGroup = heightFromRows(numRows);
+            maxHeight = (maxHeight > heightGroup) ? maxHeight : heightGroup;
+            totalNum += Number(group.num);
+            totalRows += numRows;
+          });
+
+          var typeOfPeople = options.typeOfPeople || "people";
+          var cvWidth = ctx.canvas.width;
+          var xCenterCv = ctx.width / 2,
+              text = "Out of " + totalNum + " " + typeOfPeople,
+              textWidth = ctx.measureText(text).width;
+              posXText = (cvWidth - textWidth) / 2;
+          console.log(totalNum);
+
+          ctx.fillText(text , posXText, 20);
+          ctx.fill();
+          groups.map(function(group, ix) {
+            var num = group.num;
+            var col = group.col;
+            var maxRow = Math.ceil(num/col);
+            var height = (maxRow - 1)*distanceY;
+            var width = 2*FACE_RADIUS*col;
+            var posy = y + (maxHeight - heightFromRows(maxRow))/2 ;
+            drawMultitudes(ctx, num, col,
+                            distX , posy,
+                            group.skinTone || options.skinTone,
+                            group.hair || hair);
+            var xCenterMultitude = distX + width/2 - FACE_RADIUS;
+            var firstText = group.num + " are";
+            var numAreTextWidth = ctx.measureText(firstText).width;
+            ctx.fillText(firstText,
+                            xCenterMultitude - numAreTextWidth / 2,
+                            y + maxHeight + MULTITUDES_TEXT_DISTANCE);
+            var secondText = group.name,
+                secondTextWidth = ctx.measureText(secondText).width;
+            ctx.fillText(group.name,
+                            xCenterMultitude - secondTextWidth / 2,
+                            y + maxHeight + 10 + MULTITUDES_TEXT_DISTANCE);
+            distX += MULTITUDES_DISTANCE + width;
+          });
+        }
+        var groups = [];
+        function draw(number, skincolor, haircolor, namegroup, e) {
+          groups.push({
+            name: namegroup,
+            num: number,
+            col: Math.floor(Math.sqrt(number)),
+            skinTone: skincolor,
+            hair: {color: haircolor}
+          });
+          console.log("Heloos");
+          e.preventDefault();
+          var cv = document.getElementById("stage");
+          var ctx = cv.getContext("2d");
+          var cvw = ctx.canvas.width;
+          ctx.clearRect(0, 0, cvw, 100);
+          ctx.save();
+          var totalCols = groups.reduce(function(cols, group) {
+            return cols + group.col;
+          }, 0);
+          var numGroups = groups.length;
+          var totalDrawWidth = totalCols * 2 * FACE_RADIUS
+                            + (numGroups - 1) * MULTITUDES_DISTANCE;
+
+          var posx = (cvw - totalDrawWidth) / 2;
+          var maxRows = groups.reduce(function(max, group) {
+            var nrows = Math.ceil(group.num / group.col);
+            return (max > nrows) ? max : nrows;
+          }, 0);
+          var maxHeight = heightFromRows(maxRows);
+          var cvh = cv.clientHeight;
+          var posy = (cvh - maxHeight) / 2;
+          ofEvery(ctx, groups,
+                  posx, posy,
+                  {skinTone: "ALL", hair:{color:"ALL"}});
+          ctx.restore();
+        }
+    </script>
     <script type="text/jsx">
       class Welcome extends React.Component {
         render() {
@@ -38,12 +308,114 @@
           );
         }
       }
+      class DefineGroup extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {
+            number: 10,
+            skincolor: "ALL",
+            haircolor: "ALL",
+            namegroup: "Politicians"
+          }
+        }
+        changeNum(e) {
+          var newNum = e.target.value;
+          this.setState({
+            number: newNum
+          })
+        }
+        changeHandler(e) {
+          e.preventDefault();
+          var self = this;
+          this.setState({
+            number: self.refs.number.value,
+            skincolor: self.refs.skincolor.value,
+            haircolor: self.refs.haircolor.value,
+            namegroup: self.refs.namegroup.value
+          });
+        }
+
+
+
+        render () {
+          return (
+            <div>
+              <form>
+                <label for="number">
+                  Number of faces
+                  <input
+                        type="number"
+                        ref="number"
+                        value={this.state.number}
+                        onChange={this.changeHandler.bind(this)}
+                        placeholder="Ethiopians"
+                  />
+                </label>
+                <br />
+                <label for="namegroup">
+                  Name of the group
+                  <input
+                        type="text"
+                        ref="namegroup"
+                        value={this.state.namegroup}
+                        onChange={this.changeHandler.bind(this)}
+                  />
+                </label>
+                <br />
+                <label for="SkinColor">
+                Skin Color
+                  <select
+                      name="skincolor"
+                      ref="skincolor"
+                      onChange={this.changeHandler.bind(this)}
+                      value={this.state.skincolor}
+                  >
+                    <option value="ALL">All</option>
+                    <option value="LIGHT">Light</option>
+                    <option value="DARK">Dark</option>
+                  </select>
+                </label>
+                <br />
+                <label for="HairColor">
+                Hair Color
+                  <select
+                          name="haircolor"
+                          ref="haircolor"
+                          onChange={this.changeHandler.bind(this)}
+                          value={this.state.haircolor}
+                  >
+                    <option value="ALL">All</option>
+                    <option value="BLONDE">Blonde</option>
+                    <option value="BROWN">Brown</option>
+                    <option value="GRAY">Gray</option>
+                  </select>
+                </label>
+                <br />
+              <button className="btn btn-info"
+                      onClick={draw.bind( this,
+                                          this.state.number,
+                                          this.state.skincolor,
+                                          this.state.haircolor,
+                                          this.state.namegroup
+                                        )}>
+                  Add Group!
+              </button>
+              </form>
+            </div>
+          );
+        }
+      }
       class Page extends React.Component {
         render() {
           switch (this.props.page) {
             case "welcome":
               return (
                 <Welcome />
+              );
+              break;
+            case "definegroup":
+              return (
+                <DefineGroup />
               );
               break;
             default:
@@ -58,21 +430,24 @@
           return (
             <div className="btn-group">
               <button className="btn btn-default"
-                      onClick="advance"
+                      onClick={this.props.changeNumPage.bind(this,-1)}
               > Prev </button>
-              <button className="btn btn-default"> Next </button>
+              <button className="btn btn-default"
+                      onClick={this.props.changeNumPage.bind(this,1)}
+              >
+                 Next </button>
             </div>
           );
         }
       }
       class Configurator extends React.Component {
-        pageNames = ["welcome", "hola"];
         constructor(props) {
           super(props);
           this.state = {
-            pageNum: 0,
-            page: "welcome"
+            pageNum: 1,
+            page: "definegroup"
           }
+          this.pageNames = ["welcome", "definegroup"];
         }
         changeNumPage(variation) {
           var newPageNum = this.state.pageNum + variation,
@@ -84,11 +459,24 @@
         }
         render() {
           return(
-            <div className="panel-body">
-              <Page page={this.state.page} />
-              <Pagination
-                advancePage={this.advancePage.bind(this)}
-              />
+            <div className="panel-body container-fixed">
+              <div className="latCol col-xs-2 col-md-2">
+                <button className="navBtn"
+                        onClick={this.changeNumPage.bind(this, -1)}
+                > P </button>
+              </div>
+              <div className="cenCol col-xs-8 col-md-8">
+                <Page page={this.state.page} />
+              </div>
+              <div className="latCol col-xs-2 col-md-2">
+                <button className="navBtn"
+                        onClick={this.changeNumPage.bind(this, 1)}
+                > N </button>
+              </div>
+              {/*<Pagination
+                  changeNumPage={this.changeNumPage.bind(this)}
+
+              />*/}
             </div>
           );
         }
