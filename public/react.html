@@ -124,37 +124,79 @@
           ctx.restore()
         }
 
-        function drawHair(ctx, x, y, hair) {
+        function drawHair(ctx, params) {
+
+          var x = Number(params.x) || 0,
+              y = Number(params.y) || 0,
+              hair = params.hair || {color: "ALL"},
+              sex = params.sex || "ALL",
+              determined = params.determined || false;
+
+              if(params.sex.toLowerCase() === "all") {
+                sex = ((Math.random() > 0.5) ? "female" : "male");
+              }
+
+
           //Draws hair for each face
-          hair = hair || {};
-          if(!hair.color || hair.color.toLowerCase()=="all") {
-            //Case no color setted up or setted all, the hair colors
-            //will be chosen randomly from all the possible colors
-            //in an equally distributed for each main color group
-            var possibleHairColors = joinedCategories(hair_colors, true)
+          if(determined !== true) {
+            hair = hair || {};
+            if(!hair.color || hair.color.toLowerCase()=="all") {
+              //Case no color setted up or setted all, the hair colors
+              //will be chosen randomly from all the possible colors
+              //in an equally distributed for each main color group
+              var possibleHairColors = joinedCategories(hair_colors, true)
+            } else {
+              //Case color chosen
+              var possibleHairColors = hair_colors[hair.color]
+            }
+            //Random from all the possibilities
+            var rdm = Math.floor(Math.random()*possibleHairColors.length),
+                hairColor = possibleHairColors[rdm];
           } else {
-            //Case color chosen
-            var possibleHairColors = hair_colors[hair.color]
+            hairColor = hair.color;
           }
-          //Random from all the possibilities
-          var rdm = Math.floor(Math.random()*possibleHairColors.length),
-              hairColor = possibleHairColors[rdm];
 
           //Drawing hair
           ctx.fillStyle = hairColor;
 
-          ctx.beginPath();
-            ctx.moveTo(x, y);
-            //From 0 to 180 anticlockwise
-            ctx.arc(x, y, face_radius, 0, Math.PI, true);
-            var overlapXFaceHair = (1-face_hair_lateral_overlap_perc)*face_radius;
-            var overlapYFaceHair = (1-2*face_hair_lateral_overlap_perc)*face_radius;
-            ctx.lineTo(x-overlapXFaceHair, y);
-            ctx.lineTo(x-overlapXFaceHair, y-overlapYFaceHair);
-            ctx.lineTo(x+overlapXFaceHair, y-overlapYFaceHair);
-            ctx.lineTo(x+overlapXFaceHair, y);
-            ctx.fill();
-          ctx.closePath();
+          if(sex.toLowerCase() === "female"){
+            ctx.beginPath();
+              ctx.moveTo(x, y);
+              //From 0 to 180 anticlockwise
+              ctx.arc(x, y, face_radius, 0.2, Math.PI - 0.2, true);
+              var actualX = x + face_radius*Math.cos(0.4);
+              var actualY = y + face_radius*Math.cos(0.4);
+              ctx.moveTo(actualX, actualY);
+              ctx.lineTo(actualX, y - 10);
+              //ctx.lineTo(actualX + 10 , y - 10)
+              ctx.fill();
+            ctx.closePath();
+            ctx.beginPath();
+              ctx.moveTo(x, y);
+              //From 0 to 180 anticlockwise
+              ctx.save();
+                ctx.globalCompositeOperation = "destination-over";
+                ctx.fillRect(x-face_radius, y, 2*face_radius, face_radius);
+              ctx.restore();
+
+              //ctx.lineTo(actualX + 10 , y - 10)
+              ctx.fill();
+            ctx.closePath();
+          } else {
+            ctx.beginPath();
+              ctx.moveTo(x, y);
+              //From 0 to 180 anticlockwise
+              ctx.arc(x, y, face_radius, 0, Math.PI, true);
+              var overlapXFaceHair = (1-face_hair_lateral_overlap_perc)*face_radius;
+              var overlapYFaceHair = (1-2*face_hair_lateral_overlap_perc)*face_radius;
+              ctx.lineTo(x-overlapXFaceHair, y);
+              ctx.lineTo(x-overlapXFaceHair, y-overlapYFaceHair);
+              ctx.lineTo(x+overlapXFaceHair, y-overlapYFaceHair);
+              ctx.lineTo(x+overlapXFaceHair, y);
+              ctx.fill();
+            ctx.closePath();
+          }
+          return hairColor;
         }
 
         function repeatArr(arr, times) {
@@ -212,17 +254,30 @@
           }
         }
 
-        function drawFace(ctx, x, y, skinTone, hair){
+        function drawFace(ctx, params){
+
+          var x = Number(params.x) || 0,
+              y = Number(params.y) || 0,
+              hair = params.hair || {color: "ALL"},
+              sex = params.sex || ((Math.random() > 0.5) ? "female" : "male"),
+              determined = params.determined || false,
+              skinTone = params.skinTone || "ALL";
+
           //Drawing an individual face on the ctx context
           //x and y point to the center of the new face
-          if(!skinTone || skinTone.toLowerCase()=="all") {
-            var possibleFaceColors = joinedCategories(face_colors, true)
+          if(determined !== true) {
+            if(!skinTone || skinTone.toLowerCase()=="all") {
+              var possibleFaceColors = joinedCategories(face_colors, true)
+            } else {
+              var possibleFaceColors = face_colors[skinTone];
+            }
+            //random chosing of the color face
+            var rdm = Math.floor(Math.random()*possibleFaceColors.length),
+                faceColor = possibleFaceColors[rdm];
           } else {
-            var possibleFaceColors = face_colors[skinTone];
+            faceColor = skinTone;
           }
-          //random chosing of the color face
-          var rdm = Math.floor(Math.random()*possibleFaceColors.length),
-              faceColor = possibleFaceColors[rdm];
+
 
           //Base Face
             ctx.save();
@@ -239,11 +294,30 @@
               //The source is the hair and the destination is the raund face
               //We want the hair on top the face
               ctx.globalCompositeOperation = "source-over";
-              drawHair(ctx, x, y, hair);
+              hairOptions = {
+                'x': x,
+                 'y': y,
+                 'hair': hair,
+                 'determined': determined,
+                 'sex': sex
+              }
+              var hairColor = drawHair(ctx, hairOptions);
             ctx.restore();
+            return {
+                      'faceColor': faceColor,
+                      'hairColor': hairColor
+                    };
         }
 
-        function drawMultitudes(ctx, num, col, x, y, skinTone, hair) {
+        function drawMultitudes(ctx, options) {
+
+          var x = Number(options.x) || 0,
+              y = Number(options.y) || 0,
+              num = Number(options.num) || 0,
+              col = Number(options.col) || 1,
+              skinTone = options.skinTone || "ALL",
+              hair = options.hair || {color: "ALL"},
+              group = options.group || {};
           //Draw a group of num faces organized on col number of columns
           //x and y point to the position of center of the top-left face
 
@@ -256,6 +330,9 @@
           //More like the distance between the centers of the top face and the
           //bottom face
           var height = (maxRow - 1)*distanceY;
+
+          //Array that will save all the chars of each face for next renderings
+          var facesChars = [];
           ctx.save();
             //The faces are drawed from bottom-left to top-right
             //We want that as we go down, the faces are on-top the previous
@@ -271,12 +348,31 @@
                 var posx = x + face_radius*2*c,
                   //From bottom to top with ovelaped faces
                     posy = y + height - face_radius*2*r*(1-face_overlap_perc);
+                    //Are faces already determined
+                    var determined = group.facesChars !== undefined;
                   //draw each face
-                  drawFace(ctx, posx, posy, skinTone, hair);
+                  if(determined) {
+                    var groupFace = r*col + c;
+                    skinTone = group.facesChars[groupFace].faceColor;
+                    hair.color = group.facesChars[groupFace].hairColor;
+                  }
+                  faceOptions = {
+                    x: posx,
+                    y: posy,
+                    hair: hair,
+                    sex: group.sex ||((Math.random() > 0.5) ? "female" : "male"),
+                    determined: determined,
+                    skinTone: skinTone
+                  }
+                  //console.log(faceOptions.sex, group.sex);
+                  var faceChars = drawFace(ctx,
+                                          faceOptions);
+                  facesChars.push(faceChars);
                 num--;
               }
             }
           ctx.restore();
+          group.facesChars = facesChars;
 
         }
 
@@ -307,24 +403,30 @@
           return 2*face_radius + (n_rows - 1) * distanceY;
         }
 
-        function ofEvery(ctx, groups, x, y, options) {
+        function ofEvery(ctx, params) {
+          var groups = params.groups || [],
+              x = params.x || 0,
+              y = params.y || 0,
+              defaultValues = params.defaultValues || {};
+
           //Important function. Incharged of drawing the situation
           //prepared by draw().
 
           //Options contain the default skincolor and hair color(and others)
           //for the groups in groups that don't have them specified
-          options = options || {};
 
           //Vertical distance between the center of two consecutive
           //faces in a column
           var distanceY = 2*face_radius*(1-face_overlap_perc);
           //Starting point of the center of the most left faces in all the
           //the diagram
-          var distX = x,
+          var distX = x ,
 
               maxHeight = 0,
               totalNum = 0,
               totalRows = 0;
+
+
 
           groups.forEach(function(group) {
             var numRows = Math.ceil(group.num / group.col),
@@ -338,9 +440,7 @@
 
           ctx.save();
             ctx.font = top_font_size + "px " + top_font;
-            console.log(ctx);
-            console.log(ctx.font);
-            var typeOfPeople = options.typeOfPeople || "people",
+            var typeOfPeople = defaultValues.typeOfPeople || "people",
                 cvWidth = ctx.canvas.width,
             //horizontal center of the canvas
                 xCenterCv = ctx.width / 2,
@@ -367,10 +467,17 @@
                 //is at the same level
                 posy = y + (maxHeight - heightFromRows(maxRow))/2 ;
             //Draw group!
-            drawMultitudes(ctx, num, col,
-                            distX , posy,
-                            group.skinTone || options.skinTone,
-                            group.hair || options.hair);
+            multitudesOptions = {
+              x: distX,
+              y: posy,
+              num: num,
+              col: col,
+              skinTone: group.skinTone || options.skinTone,
+              hair: group.hair || options.hair ,
+              group: group  ,
+              sex: group.sex || ((Math.random() > 0.5) ? "female" : "male")
+            }
+            drawMultitudes(ctx, multitudesOptions);
 
             ctx.save()
               ctx.font = multitudes_font_size + "px " + multitudes_font;
@@ -399,7 +506,7 @@
 
         //array that will have the info that it is going to be
         //rendered for each group
-        var groups = [
+        var testgroups = [
           {
             col:3,
             hair:{color:"ALL"},
@@ -415,18 +522,20 @@
             skinTone: "ALL"
           }
         ];
-
-        function draw(number, skincolor, haircolor, namegroup, e) {
+        var groups = [];
+        function draw(params, e) {
           //Main function
-          if(number !== undefined){
+          params = params || {};
+          if(params.number){
             //number is undefined when we just want to refresh the canvas
             //properties without adding any new group
             groups.push({
-              name: namegroup,
-              num: Number(number),
-              col: Math.floor(Math.sqrt(number)),
-              skinTone: skincolor,
-              hair: {color: haircolor}
+              name: params.namegroup || "People",
+              num: Number(params.number) || 1,
+              col: Math.floor(Math.sqrt(params.number)) || 1,
+              skinTone: params.skincolor || "ALL",
+              hair: {color: params.haircolor} || {color: "ALL"},
+              sex: params.sex || "ALL"
             });
           }
           //Recize the canva in case of any update
@@ -458,9 +567,17 @@
           var posy = (cvh - maxHeight) / 2;
 
           //Drawing the mulltides
-          ofEvery(ctx, groups,
-                  posx, posy,
-                  {skinTone: "ALL", hair:{color:"ALL"}});
+          var ofEveryParams = {
+            groups: groups || [],
+            x: posx,
+            y: posy,
+            defaultValues: {
+              skinTone: "ALL",
+              hair:{color:"ALL"},
+              sex:"ALL"
+            }
+          }
+          ofEvery(ctx, ofEveryParams);
         }
 
         function updateCanva(options) {
@@ -509,7 +626,8 @@
             number: 10,
             skincolor: "ALL",
             haircolor: "ALL",
-            namegroup: "Politicians"
+            namegroup: "Politicians",
+            sex: "ALL"
           }
         }
         changeHandler(e) {
@@ -519,22 +637,33 @@
             number: self.refs.number.value,
             skincolor: self.refs.skincolor.value,
             haircolor: self.refs.haircolor.value,
-            namegroup: self.refs.namegroup.value
+            namegroup: self.refs.namegroup.value,
+            sex: self.refs.sex.value
           });
         }
         drawHandler(e) {
             e.preventDefault();
-
-            draw( this.refs.number.value,
-                  this.refs.skincolor.value,
-                  this.refs.haircolor.value,
-                  this.refs.namegroup.value
-            );
-
+            draw({
+                number: this.refs.number.value,
+                skincolor: this.refs.skincolor.value,
+                haircolor: this.refs.haircolor.value,
+                namegroup: this.refs.namegroup.value,
+                sex: this.refs.sex.value
+            });
+        }
+        erasePrevious(e){
+          e.preventDefault();
+          groups.pop();
+          draw();
         }
         render () {
           return (
             <div>
+              <button
+                onClick={this.erasePrevious.bind(this)}
+                className="btn btn-danger">
+                  Erase Previous
+              </button>
               <form>
                 <label for="number">
                   Number of faces
@@ -555,6 +684,20 @@
                         value={this.state.namegroup}
                         onChange={this.changeHandler.bind(this)}
                   />
+                </label>
+                <br />
+                <label for="sex">
+                Sex
+                  <select
+                      name="sex"
+                      ref="sex"
+                      onChange={this.changeHandler.bind(this)}
+                      value={this.state.sex}
+                  >
+                    <option value="ALL">All</option>
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                  </select>
                 </label>
                 <br />
                 <label for="SkinColor">
@@ -811,8 +954,8 @@
         constructor(props) {
           super(props);
           this.state = {
-            pageNum: 2,
-            page: "dimensionsconfigurator"
+            pageNum: 1,
+            page: "definegroup"
           }
           this.pageNames = ["welcome",
                             "definegroup",
@@ -852,7 +995,6 @@
           );
         }
       }
-
       ReactDOM.render(
         <Configurator />,
       document.getElementById("configurator-app"));
