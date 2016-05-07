@@ -90,8 +90,15 @@
             "#2C222B",
             "#B7A69E",
             "#D6C4C2"
+          ],
+          RED: [
+            "#CD5B45",
+            "#8B3E2F",
+            "#FF7256"
           ]
         },
+        //names
+        type_people = "People",
 
         //font conf
         top_font_size = 40,
@@ -196,7 +203,10 @@
               ctx.fill();
             ctx.closePath();
           }
-          return hairColor;
+          return {
+                    hairColor: hairColor,
+                    sex: sex
+                  }
         }
 
         function repeatArr(arr, times) {
@@ -301,11 +311,12 @@
                  'determined': determined,
                  'sex': sex
               }
-              var hairColor = drawHair(ctx, hairOptions);
+              var results = drawHair(ctx, hairOptions);
             ctx.restore();
             return {
                       'faceColor': faceColor,
-                      'hairColor': hairColor
+                      'hairColor': results.hairColor,
+                      'sex': results.sex
                     };
         }
 
@@ -317,7 +328,8 @@
               col = Number(options.col) || 1,
               skinTone = options.skinTone || "ALL",
               hair = options.hair || {color: "ALL"},
-              group = options.group || {};
+              group = options.group || {},
+              sex = group.sex || "ALL";
           //Draw a group of num faces organized on col number of columns
           //x and y point to the position of center of the top-left face
 
@@ -355,18 +367,20 @@
                     var groupFace = r*col + c;
                     skinTone = group.facesChars[groupFace].faceColor;
                     hair.color = group.facesChars[groupFace].hairColor;
+                    sex = group.facesChars[groupFace].sex;
                   }
                   faceOptions = {
                     x: posx,
                     y: posy,
                     hair: hair,
-                    sex: group.sex ||((Math.random() > 0.5) ? "female" : "male"),
+                    sex: sex,
                     determined: determined,
                     skinTone: skinTone
                   }
                   //console.log(faceOptions.sex, group.sex);
                   var faceChars = drawFace(ctx,
                                           faceOptions);
+                  console.log(faceChars);
                   facesChars.push(faceChars);
                 num--;
               }
@@ -408,100 +422,100 @@
               x = params.x || 0,
               y = params.y || 0,
               defaultValues = params.defaultValues || {};
+          if(groups.length){
+            //Important function. Incharged of drawing the situation
+            //prepared by draw().
 
-          //Important function. Incharged of drawing the situation
-          //prepared by draw().
+            //Options contain the default skincolor and hair color(and others)
+            //for the groups in groups that don't have them specified
 
-          //Options contain the default skincolor and hair color(and others)
-          //for the groups in groups that don't have them specified
+            //Vertical distance between the center of two consecutive
+            //faces in a column
+            var distanceY = 2*face_radius*(1-face_overlap_perc);
+            //Starting point of the center of the most left faces in all the
+            //the diagram
+            var distX = x ,
 
-          //Vertical distance between the center of two consecutive
-          //faces in a column
-          var distanceY = 2*face_radius*(1-face_overlap_perc);
-          //Starting point of the center of the most left faces in all the
-          //the diagram
-          var distX = x ,
-
-              maxHeight = 0,
-              totalNum = 0,
-              totalRows = 0;
-
-
-
-          groups.forEach(function(group) {
-            var numRows = Math.ceil(group.num / group.col),
-                heightGroup = heightFromRows(numRows);
-
-            maxHeight = (maxHeight > heightGroup) ? maxHeight : heightGroup;
-            totalNum += Number(group.num);
-            totalRows += numRows;
-          });
+                maxHeight = 0,
+                totalNum = 0,
+                totalRows = 0;
 
 
-          ctx.save();
-            ctx.font = top_font_size + "px " + top_font;
-            var typeOfPeople = defaultValues.typeOfPeople || "people",
-                cvWidth = ctx.canvas.width,
-            //horizontal center of the canvas
-                xCenterCv = ctx.width / 2,
-                //Text of the group
-                text = "Out of " + totalNum + " " + typeOfPeople,
-                textWidth = ctx.measureText(text).width;
-                //Pos of the text
-                posXText = (cvWidth - textWidth) / 2;
 
-          //Main text on the center of the canvas and in the top
-            ctx.fillText(text , posXText, top_font_pos_y);
-          ctx.restore();
+            groups.forEach(function(group) {
+              var numRows = Math.ceil(group.num / group.col),
+                  heightGroup = heightFromRows(numRows);
 
-          groups.map(function(group, ix) {
-            var num = group.num,
-                col = group.col,
-                //highest num of rows for this group eleent
-                maxRow = Math.ceil(num/col),
-                //More like the distance between the center of the top face
-                //and the bottom face
-                height = (maxRow - 1)*distanceY,
-                width = 2*face_radius*col,
-                //Done it so all the bottom line of each multitude
-                //is at the same level
-                posy = y + (maxHeight - heightFromRows(maxRow))/2 ;
-            //Draw group!
-            multitudesOptions = {
-              x: distX,
-              y: posy,
-              num: num,
-              col: col,
-              skinTone: group.skinTone || options.skinTone,
-              hair: group.hair || options.hair ,
-              group: group  ,
-              sex: group.sex || ((Math.random() > 0.5) ? "female" : "male")
-            }
-            drawMultitudes(ctx, multitudesOptions);
+              maxHeight = (maxHeight > heightGroup) ? maxHeight : heightGroup;
+              totalNum += Number(group.num);
+              totalRows += numRows;
+            });
 
-            ctx.save()
-              ctx.font = multitudes_font_size + "px " + multitudes_font;
-              var xCenterMultitude = distX + width/2 - face_radius;
-              //"10 are" text
-              var firstText = group.num + " are";
-              var numAreTextWidth = ctx.measureText(firstText).width;
-              //centered with respect to the multitude graph and at a distance
-              //from the bottom
-              ctx.fillText(firstText,
-                              xCenterMultitude - numAreTextWidth / 2,
-                              y + maxHeight + multitudes_text_distance);
-              //"politicians" text
-              var secondText = group.name,
-                  secondTextWidth = ctx.measureText(secondText).width;
-              //centered with respect to the multitude graph and at a distance
-              //from the bottom and the firstText
-              ctx.fillText(group.name,
-                              xCenterMultitude - secondTextWidth / 2,
-                              y + maxHeight + 10 + multitudes_font_size);
+
+            ctx.save();
+              ctx.font = top_font_size + "px " + top_font;
+              var cvWidth = ctx.canvas.width,
+              //horizontal center of the canvas
+                  xCenterCv = ctx.width / 2,
+                  //Text of the group
+                  text = "Out of " + totalNum + " " + type_people,
+                  textWidth = ctx.measureText(text).width;
+                  //Pos of the text
+                  posXText = (cvWidth - textWidth) / 2;
+
+            //Main text on the center of the canvas and in the top
+              ctx.fillText(text , posXText, top_font_pos_y);
             ctx.restore();
-            //update de distX for the next multitude
-            distX += multitudes_distance + width;
-          });
+
+            groups.map(function(group, ix) {
+              var num = group.num,
+                  col = group.col,
+                  //highest num of rows for this group eleent
+                  maxRow = Math.ceil(num/col),
+                  //More like the distance between the center of the top face
+                  //and the bottom face
+                  height = (maxRow - 1)*distanceY,
+                  width = 2*face_radius*col,
+                  //Done it so all the bottom line of each multitude
+                  //is at the same level
+                  posy = y + (maxHeight - heightFromRows(maxRow))/2 ;
+              //Draw group!
+              multitudesOptions = {
+                x: distX,
+                y: posy,
+                num: num,
+                col: col,
+                skinTone: group.skinTone || options.skinTone,
+                hair: group.hair || options.hair ,
+                group: group  ,
+                sex: group.sex || ((Math.random() > 0.5) ? "female" : "male")
+              }
+              drawMultitudes(ctx, multitudesOptions);
+
+              ctx.save()
+                ctx.font = multitudes_font_size + "px " + multitudes_font;
+                var xCenterMultitude = distX + width/2 - face_radius;
+                //"10 are" text
+                var firstText = group.num + " are";
+                var numAreTextWidth = ctx.measureText(firstText).width;
+                //centered with respect to the multitude graph and at a distance
+                //from the bottom
+                ctx.fillText(firstText,
+                                xCenterMultitude - numAreTextWidth / 2,
+                                y + maxHeight + multitudes_text_distance);
+                //"politicians" text
+                var secondText = group.name,
+                    secondTextWidth = ctx.measureText(secondText).width;
+                //centered with respect to the multitude graph and at a distance
+                //from the bottom and the firstText
+                ctx.fillText(group.name,
+                                xCenterMultitude - secondTextWidth / 2,
+                                y + maxHeight + 10 + multitudes_font_size);
+              ctx.restore();
+              //update de distX for the next multitude
+              distX += multitudes_distance + width;
+            });
+          }
         }
 
         //array that will have the info that it is going to be
@@ -583,6 +597,8 @@
         function updateCanva(options) {
           //Changes the main parametres of the drawing
           //and redraws it
+          type_people = options.type_people
+                              || type_people,
           face_radius = Number(options.face_radius)
                                   || face_radius,
           face_overlap_perc = Number(options.face_overlap_perc)
@@ -611,10 +627,29 @@
     </script>
     <script type="text/jsx">
       class Welcome extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {
+            typepeople: "People"
+          }
+        }
+        changeHandler(e) {
+          var newName = e.target.value;
+          updateCanva({type_people: newName});
+          this.setState({
+            typepeople: newName
+          })
+        }
         render() {
           return (
             <div>
               Welcome To You Poll Creator!
+              <input
+                type="name"
+                ref="generalname"
+                value={this.state.typepeople}
+                onChange={this.changeHandler.bind(this)}
+              />
             </div>
           );
         }
@@ -627,7 +662,13 @@
             skincolor: "ALL",
             haircolor: "ALL",
             namegroup: "Politicians",
-            sex: "ALL"
+            sex: "ALL",
+            hairs: {
+              "blonde": true,
+              "brown": true,
+              "gray": true,
+              "red": true
+            }
           }
         }
         changeHandler(e) {
@@ -655,6 +696,14 @@
           e.preventDefault();
           groups.pop();
           draw();
+        }
+        checkboxHandler(color) {
+          var valColor = this.state.hairs[color],
+              newState = {};
+          newState["hairs"] = {},
+          newState.hairs[color] = !valColor;
+          this.setState(newState);
+          console.log(newState);
         }
         render () {
           return (
@@ -725,8 +774,16 @@
                     <option value="ALL">All</option>
                     <option value="BLONDE">Blonde</option>
                     <option value="BROWN">Brown</option>
+                    <option value="RED">Red</option>
                     <option value="GRAY">Gray</option>
                   </select>
+                  {/*<input
+                    type="checkbox"
+                    ref="hair_blonde"
+                    onClick={this.checkboxHandler.bind(this, "blonde")}
+                    checked={this.state.hairs.blonde}
+                  />*/}
+
                 </label>
                 <br />
               <button className="btn btn-info"
@@ -820,6 +877,7 @@
           this.state = {
             topfont: top_font,
             topfontsize: top_font_size,
+            multitudesfont: multitudes_font,
             multitudesfontsize: multitudes_font_size,
             topfontposy: top_font_pos_y
           }
