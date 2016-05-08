@@ -73,7 +73,7 @@
                 ]
         },
         hair_colors = {
-          BLONDE: [
+          blonde: [
             "#CABFB1",
             "#DCD0BA",
             "#FFF5E1",
@@ -82,16 +82,16 @@
             "#DEBC99",
             "#B89778"
           ],
-          BROWN: [
+          brown: [
             "#090806",
             "#2C222B",
           ],
-          GRAY: [
+          gray: [
             "#2C222B",
             "#B7A69E",
             "#D6C4C2"
           ],
-          RED: [
+          red: [
             "#CD5B45",
             "#8B3E2F",
             "#FF7256"
@@ -147,14 +147,26 @@
           //Draws hair for each face
           if(determined !== true) {
             hair = hair || {};
-            if(!hair.color || hair.color.toLowerCase()=="all") {
+            if(!hair.color || (hair.color.lenght === 0)){
               //Case no color setted up or setted all, the hair colors
               //will be chosen randomly from all the possible colors
               //in an equally distributed for each main color group
               var possibleHairColors = joinedCategories(hair_colors, true)
             } else {
               //Case color chosen
-              var possibleHairColors = hair_colors[hair.color]
+              var filteredHairColors = Object.keys(hair.color)
+                                             .filter(function(color) {
+                                               return hair.color[color]
+                                             }).reduce(function(obj, color){
+                                               obj[color] = hair_colors[color]
+                                               return obj;
+                                             }, {});
+
+             var possibleHairColors = (Object.keys(filteredHairColors).length) ?
+                                      //Case there are colors chosen
+                                      joinedCategories(filteredHairColors, true)
+                                      : joinedCategories(hair_colors, true);
+
             }
             //Random from all the possibilities
             var rdm = Math.floor(Math.random()*possibleHairColors.length),
@@ -162,6 +174,7 @@
           } else {
             hairColor = hair.color;
           }
+
 
           //Drawing hair
           ctx.fillStyle = hairColor;
@@ -227,6 +240,7 @@
           //values for each in the final arr. That means that those categories
           //with few values, will be repeated several times till all cat have
           //same categories
+          console.log(240, category);
           if(distributed){
             //The distributions is made by first finding a number that is
             //multiple of the lengths of the arrays for each categories.
@@ -330,6 +344,7 @@
               hair = options.hair || {color: "ALL"},
               group = options.group || {},
               sex = group.sex || "ALL";
+              console.log("333", options);
           //Draw a group of num faces organized on col number of columns
           //x and y point to the position of center of the top-left face
 
@@ -377,10 +392,8 @@
                     determined: determined,
                     skinTone: skinTone
                   }
-                  //console.log(faceOptions.sex, group.sex);
                   var faceChars = drawFace(ctx,
                                           faceOptions);
-                  console.log(faceChars);
                   facesChars.push(faceChars);
                 num--;
               }
@@ -391,7 +404,7 @@
         }
 
         /*function oneOut(ctx, num, col, x, y, skinTone) {
-          var hair = {color: "BLONDE"};
+          var hair = {color: "blonde"};
           var distanceY = 2*face_radius*(1-face_overlap_perc);
           var maxRow = Math.ceil(num/col);
           var height = (maxRow - 1)*distanceY;
@@ -543,12 +556,13 @@
           if(params.number){
             //number is undefined when we just want to refresh the canvas
             //properties without adding any new group
+            console.log("Params 544", params);
             groups.push({
               name: params.namegroup || "People",
               num: Number(params.number) || 1,
               col: Math.floor(Math.sqrt(params.number)) || 1,
               skinTone: params.skincolor || "ALL",
-              hair: {color: params.haircolor} || {color: "ALL"},
+              hair: {color: params.hairs} || {color: "ALL"},
               sex: params.sex || "ALL"
             });
           }
@@ -660,7 +674,6 @@
           this.state = {
             number: 10,
             skincolor: "ALL",
-            haircolor: "ALL",
             namegroup: "Politicians",
             sex: "ALL",
             hairs: {
@@ -677,7 +690,12 @@
           this.setState({
             number: self.refs.number.value,
             skincolor: self.refs.skincolor.value,
-            haircolor: self.refs.haircolor.value,
+            haircolor: {
+              blonde: self.refs.hair_blonde.checked,
+              brown: self.refs.hair_brown.checked,
+              gray: self.refs.hair_gray.checked,
+              red: self.refs.hair_red.checked
+            },
             namegroup: self.refs.namegroup.value,
             sex: self.refs.sex.value
           });
@@ -685,11 +703,11 @@
         drawHandler(e) {
             e.preventDefault();
             draw({
-                number: this.refs.number.value,
-                skincolor: this.refs.skincolor.value,
-                haircolor: this.refs.haircolor.value,
-                namegroup: this.refs.namegroup.value,
-                sex: this.refs.sex.value
+                number: this.state.number,
+                skincolor: this.state.skincolor,
+                namegroup: this.state.namegroup,
+                sex: this.state.sex,
+                hairs: this.state.hairs
             });
         }
         erasePrevious(e){
@@ -699,11 +717,11 @@
         }
         checkboxHandler(color) {
           var valColor = this.state.hairs[color],
-              newState = {};
-          newState["hairs"] = {},
-          newState.hairs[color] = !valColor;
-          this.setState(newState);
-          console.log(newState);
+              newState = this.state.hairs;
+          newState[color] = !valColor;
+          this.setState({
+            hairs: newState
+          });
         }
         render () {
           return (
@@ -765,24 +783,50 @@
                 <br />
                 <label for="HairColor">
                 Hair Color
-                  <select
+                  {/*<select
                           name="haircolor"
                           ref="haircolor"
                           onChange={this.changeHandler.bind(this)}
                           value={this.state.haircolor}
                   >
                     <option value="ALL">All</option>
-                    <option value="BLONDE">Blonde</option>
-                    <option value="BROWN">Brown</option>
-                    <option value="RED">Red</option>
-                    <option value="GRAY">Gray</option>
-                  </select>
-                  {/*<input
+                    <option value="blonde">blonde</option>
+                    <option value="brown">brown</option>
+                    <option value="red">Red</option>
+                    <option value="gray">gray</option>
+                  </select>*/ }
+                  <br />
+                  Blonde
+                  <input
                     type="checkbox"
                     ref="hair_blonde"
-                    onClick={this.checkboxHandler.bind(this, "blonde")}
+                    onChange={this.checkboxHandler.bind(this, "blonde")}
                     checked={this.state.hairs.blonde}
-                  />*/}
+                  />
+                  <br />
+                  Brown:
+                  <input
+                    type="checkbox"
+                    ref="hair_brown"
+                    onChange={this.checkboxHandler.bind(this, "brown")}
+                    checked={this.state.hairs.brown}
+                  />
+                  <br />
+                  Gray:
+                  <input
+                    type="checkbox"
+                    ref="hair_gray"
+                    onChange={this.checkboxHandler.bind(this, "gray")}
+                    checked={this.state.hairs.gray}
+                  />
+                  <br />
+                  Red:
+                  <input
+                    type="checkbox"
+                    ref="hair_red"
+                    onChange={this.checkboxHandler.bind(this, "red")}
+                    checked={this.state.hairs.red}
+                  />
 
                 </label>
                 <br />
