@@ -131,16 +131,33 @@
           ctx.restore()
         }
 
+        function chosenByProb(rangeObj) {
+          //Return a key from the rangeObj randomly according
+          //to the probabilityies of each:
+          var arrTotProb = Object.keys(rangeObj).reduce(function(arr, key){
+            var arrKeyRep = repeatArr([key], Math.floor(rangeObj[key]));
+            return arr.concat(arrKeyRep)
+          }, []);
+
+
+          var rdm = Math.floor(Math.random()*arrTotProb.length);
+
+          return arrTotProb[rdm];
+        }
+
         function drawHair(ctx, params) {
 
           var x = Number(params.x) || 0,
               y = Number(params.y) || 0,
               hair = params.hair || {color: "ALL"},
-              sex = params.sex || "ALL",
+              sexProbs = params.sex || "ALL",
               determined = params.determined || false;
-
-              if(params.sex.toLowerCase() === "all") {
-                sex = ((Math.random() > 0.5) ? "female" : "male");
+              if(typeof sexProbs === "object"){
+                var sex = chosenByProb(sexProbs);
+              } else if(determined) {
+                var sex = params.sex;
+              } else {
+                var sex = ((Math.random() > 0.5) ? "female" : "male");
               }
 
 
@@ -153,20 +170,8 @@
               //in an equally distributed for each main color group
               var possibleHairColors = joinedCategories(hair_colors, true)
             } else {
-              //Case color chosen
-              var filteredHairColors = Object.keys(hair.color)
-                                             .filter(function(color) {
-                                               return hair.color[color]
-                                             }).reduce(function(obj, color){
-                                               obj[color] = hair_colors[color]
-                                               return obj;
-                                             }, {});
-
-             var possibleHairColors = (Object.keys(filteredHairColors).length) ?
-                                      //Case there are colors chosen
-                                      joinedCategories(filteredHairColors, true)
-                                      : joinedCategories(hair_colors, true);
-
+              var typeHairChosen = chosenByProb(hair.color);
+              var possibleHairColors = hair_colors[typeHairChosen];
             }
             //Random from all the possibilities
             var rdm = Math.floor(Math.random()*possibleHairColors.length),
@@ -240,7 +245,6 @@
           //values for each in the final arr. That means that those categories
           //with few values, will be repeated several times till all cat have
           //same categories
-          console.log(240, category);
           if(distributed){
             //The distributions is made by first finding a number that is
             //multiple of the lengths of the arrays for each categories.
@@ -284,8 +288,14 @@
               y = Number(params.y) || 0,
               hair = params.hair || {color: "ALL"},
               sex = params.sex || ((Math.random() > 0.5) ? "female" : "male"),
-              determined = params.determined || false,
-              skinTone = params.skinTone || "ALL";
+              determined = params.determined || false;
+          if(determined) {
+            var skinTone = params.skinTone;
+          } else  if(typeof params.skinTone === "object"){
+            var skinTone = chosenByProb(params.skinTone).toUpperCase();
+          } else{
+            var skinTone = "ALL";
+          }
 
           //Drawing an individual face on the ctx context
           //x and y point to the center of the new face
@@ -326,6 +336,7 @@
                  'sex': sex
               }
               var results = drawHair(ctx, hairOptions);
+              console.log(results);
             ctx.restore();
             return {
                       'faceColor': faceColor,
@@ -334,17 +345,16 @@
                     };
         }
 
-        function drawMultitudes(ctx, options) {
+        function drawMultitudes(ctx, params) {
 
-          var x = Number(options.x) || 0,
-              y = Number(options.y) || 0,
-              num = Number(options.num) || 0,
-              col = Number(options.col) || 1,
-              skinTone = options.skinTone || "ALL",
-              hair = options.hair || {color: "ALL"},
-              group = options.group || {},
+          var x = Number(params.x) || 0,
+              y = Number(params.y) || 0,
+              num = Number(params.num) || 0,
+              col = Number(params.col) || 1,
+              skinTone = params.skinTone || "ALL",
+              hair = params.hair || {color: "ALL"},
+              group = params.group || {},
               sex = group.sex || "ALL";
-              console.log("333", options);
           //Draw a group of num faces organized on col number of columns
           //x and y point to the position of center of the top-left face
 
@@ -392,6 +402,7 @@
                     determined: determined,
                     skinTone: skinTone
                   }
+
                   var faceChars = drawFace(ctx,
                                           faceOptions);
                   facesChars.push(faceChars);
@@ -503,6 +514,7 @@
                 group: group  ,
                 sex: group.sex || ((Math.random() > 0.5) ? "female" : "male")
               }
+
               drawMultitudes(ctx, multitudesOptions);
 
               ctx.save()
@@ -549,20 +561,22 @@
             skinTone: "ALL"
           }
         ];
+
         var groups = [];
+
         function draw(params, e) {
           //Main function
           params = params || {};
           if(params.number){
             //number is undefined when we just want to refresh the canvas
             //properties without adding any new group
-            console.log("Params 544", params);
             groups.push({
               name: params.namegroup || "People",
               num: Number(params.number) || 1,
               col: Math.floor(Math.sqrt(params.number)) || 1,
               skinTone: params.skincolor || "ALL",
-              hair: {color: params.hairs} || {color: "ALL"},
+              //hair: {color: params.hairs} || {color: "ALL"},
+              hair: {color: params.hairrange},
               sex: params.sex || "ALL"
             });
           }
@@ -673,14 +687,20 @@
           super(props);
           this.state = {
             number: 10,
-            skincolor: "ALL",
+            skincolor: {
+              light: 50,
+              dark: 50
+            },
             namegroup: "Politicians",
-            sex: "ALL",
-            hairs: {
-              "blonde": true,
-              "brown": true,
-              "gray": true,
-              "red": true
+            sex: {
+              male: 50,
+              female: 50
+            },
+            hairrange: {
+              blonde: 25,
+              brown: 25,
+              gray: 25,
+              red: 25
             }
           }
         }
@@ -689,15 +709,7 @@
           var self = this;
           this.setState({
             number: self.refs.number.value,
-            skincolor: self.refs.skincolor.value,
-            haircolor: {
-              blonde: self.refs.hair_blonde.checked,
-              brown: self.refs.hair_brown.checked,
-              gray: self.refs.hair_gray.checked,
-              red: self.refs.hair_red.checked
-            },
             namegroup: self.refs.namegroup.value,
-            sex: self.refs.sex.value
           });
         }
         drawHandler(e) {
@@ -707,7 +719,7 @@
                 skincolor: this.state.skincolor,
                 namegroup: this.state.namegroup,
                 sex: this.state.sex,
-                hairs: this.state.hairs
+                hairrange: this.state.hairrange
             });
         }
         erasePrevious(e){
@@ -715,12 +727,77 @@
           groups.pop();
           draw();
         }
-        checkboxHandler(color) {
+        /*checkboxHandler(color) {
           var valColor = this.state.hairs[color],
               newState = this.state.hairs;
           newState[color] = !valColor;
           this.setState({
             hairs: newState
+          });
+        }*/
+        hairRangeHandler(e) {
+          var self = this,
+              color = e.target.name,
+              prevVal = self.state.hairrange[color],
+              actualVal = Number(e.target.value),
+              variation = actualVal - prevVal,
+              sumValOtherColors = Object.keys(self.state.hairrange)
+                                  .reduce(function(tot, col) {
+                                    if(col !== color) {
+                                      tot += self.state.hairrange[col];
+                                    }
+                                    return tot;
+                                  }, 0),
+             newHairRange = Object.keys(self.state.hairrange)
+                            .reduce(function(obj, col) {
+                              if(col === color) {
+                                obj[col] = actualVal;
+                              } else {
+                                var valCol = self.state.hairrange[col];
+                                obj[col] =  valCol - valCol
+                                            * variation / sumValOtherColors;
+                              }
+                              return obj;
+                            }, {});
+
+              this.setState({
+                hairrange: newHairRange
+              })
+        }
+        sexRangeHandler(e) {
+          var sexChanged = e.target.name,
+              val = Number(e.target.value);
+
+          if(sexChanged === "male") {
+            var valMale = val,
+                valFemale = 100 - val;
+          } else {
+            var valMale = 100 - val,
+                valFemale = val
+          }
+
+          this.setState({
+            sex: {
+              male: valMale,
+              female: valFemale
+            }
+          });
+        }
+        skincolorRangeHandler(e) {
+          var skinChanged= e.target.name,
+              val = Number(e.target.value);
+          if(skinChanged === "light") {
+            var lightVal = val,
+                darkVal = 100 - val;
+          } else {
+            var lightVal = 100 - val,
+                darkVal = val;
+          }
+          this.setState({
+            skincolor: {
+              light: lightVal,
+              dark: darkVal
+            }
           });
         }
         render () {
@@ -754,79 +831,95 @@
                 </label>
                 <br />
                 <label for="sex">
-                Sex
-                  <select
-                      name="sex"
-                      ref="sex"
-                      onChange={this.changeHandler.bind(this)}
-                      value={this.state.sex}
-                  >
-                    <option value="ALL">All</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                  </select>
+                Sex<br />
+                  Male
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    ref="sex_male"
+                    name="male"
+                    value={this.state.sex.male}
+                    onChange={this.sexRangeHandler.bind(this)}
+                  />
+                  <br />
+                  Female
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    ref="sex_female"
+                    name="female"
+                    value={this.state.sex.female}
+                    onChange={this.sexRangeHandler.bind(this)}
+                  />
                 </label>
                 <br />
                 <label for="SkinColor">
-                Skin Color
-                  <select
-                      name="skincolor"
-                      ref="skincolor"
-                      onChange={this.changeHandler.bind(this)}
-                      value={this.state.skincolor}
-                  >
-                    <option value="ALL">All</option>
-                    <option value="LIGHT">Light</option>
-                    <option value="DARK">Dark</option>
-                  </select>
+                Skin Color<br />
+                Light
+                  <input
+                    type="range"
+                    name="light"
+                    value={this.state.skincolor.light}
+                    onChange={this.skincolorRangeHandler.bind(this)}
+                  />
+                Dark
+                  <input
+                    type="range"
+                    name="dark"
+                    value={this.state.skincolor.dark}
+                    onChange={this.skincolorRangeHandler.bind(this)}
+                  />
                 </label>
                 <br />
                 <label for="HairColor">
                 Hair Color
-                  {/*<select
-                          name="haircolor"
-                          ref="haircolor"
-                          onChange={this.changeHandler.bind(this)}
-                          value={this.state.haircolor}
-                  >
-                    <option value="ALL">All</option>
-                    <option value="blonde">blonde</option>
-                    <option value="brown">brown</option>
-                    <option value="red">Red</option>
-                    <option value="gray">gray</option>
-                  </select>*/ }
                   <br />
                   Blonde
                   <input
-                    type="checkbox"
-                    ref="hair_blonde"
-                    onChange={this.checkboxHandler.bind(this, "blonde")}
-                    checked={this.state.hairs.blonde}
+                    type="range"
+                    max={100}
+                    min={0}
+                    ref="hair_blonde_ran"
+                    name="blonde"
+                    value={this.state.hairrange.blonde}
+                    onChange={this.hairRangeHandler.bind(this)}
+                  />
+                  Brown
+                  <input
+                    type="range"
+                    max={100}
+                    min={0}
+                    ref="hair_brown_ran"
+                    name="brown"
+                    value={this.state.hairrange.brown}
+                    onChange={this.hairRangeHandler.bind(this)}
                   />
                   <br />
-                  Brown:
+                  Gray
                   <input
-                    type="checkbox"
-                    ref="hair_brown"
-                    onChange={this.checkboxHandler.bind(this, "brown")}
-                    checked={this.state.hairs.brown}
+                    type="range"
+                    max={100}
+                    min={0}
+                    ref="hair_gray_ran"
+                    name="gray"
+                    value={this.state.hairrange.gray}
+                    onChange={this.hairRangeHandler.bind(this)}
                   />
-                  <br />
-                  Gray:
+                  Red
                   <input
-                    type="checkbox"
-                    ref="hair_gray"
-                    onChange={this.checkboxHandler.bind(this, "gray")}
-                    checked={this.state.hairs.gray}
+                    type="range"
+                    max={100}
+                    min={0}
+                    ref="hair_red_ran"
+                    name="red"
+                    value={this.state.hairrange.red}
+                    onChange={this.hairRangeHandler.bind(this)}
                   />
-                  <br />
-                  Red:
-                  <input
-                    type="checkbox"
-                    ref="hair_red"
-                    onChange={this.checkboxHandler.bind(this, "red")}
-                    checked={this.state.hairs.red}
-                  />
+
 
                 </label>
                 <br />
