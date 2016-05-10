@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redux example</title>
+    <script type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.5.2/redux.js">
+    </script>
+    <script src="https://fb.me/react-15.0.2.js"></script>
+    <script src="https://fb.me/react-dom-15.0.2.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js">
+    </script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
+  </head>
+  <body>
+  <div id="root">
+
+  </div>
+  <script type="text/babel">
+    //reducer
+    const counter = (state = 0, action) => {
+      switch (action.type) {
+        case "INCREMENT":
+          return state + 1;
+        case "DECREMENT":
+          return state - 1;
+        default:
+          return state;
+      }
+    }
+    const {createStore} = Redux;
+    //Creamos el store que guardara el estado. Le adjudicamos el reducer
+    //counter
+    const store = createStore(counter);
+
+    const Counter = ({value, onIncrement, onDecrement}) => {
+      return (
+        <div>
+          <h1>{value}</h1>
+          <button onClick={onIncrement}>+</button>
+          <button onClick={onDecrement}>-</button>
+        </div>
+      );
+    }
+    console.log(store);
+    const render = () => {
+      ReactDOM.render(
+        <Counter
+          value={store.getState()}
+          onIncrement={() => {
+            store.dispatch({
+              type: "INCREMENT"
+            })
+          }}
+          onDecrement={() => {
+            store.dispatch({
+              type: "DECREMENT"
+            })
+          }}
+        />
+      ,document.getElementById("root"));
+    }
+    render();
+    store.subscribe(render);
+  </script>
+
+
+  </body>
+</html>
