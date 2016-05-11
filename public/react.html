@@ -12,6 +12,13 @@
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
 
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js">
+    </script>
+    <script src="https://wzrd.in/standalone/deep-freeze@latest"></script>
+    <script
+      src="https://wzrd.in/standalone/expect@latest">
+    </script>
     <!-- Fonts -->
     <link href='https://fonts.googleapis.com/css?family=Roboto|Caveat' rel='stylesheet' type='text/css'>
 
@@ -54,7 +61,7 @@
     </div>
   </div>
 
-    <script type="text/javascript">
+    <script type="text/babel">
     var face_radius = 10,
         face_overlap_perc = 0.2,
         face_hair_lateral_overlap_perc = 0.3,
@@ -123,7 +130,7 @@
           cv.height = canvas_height;
         })()
 
-        function resetCanvas(ctx) {
+        const resetCanvas = (ctx) => {
           //Clears all the canvas with a white rectangle
           //Used for each new group adition and update
           ctx.save();
@@ -131,56 +138,60 @@
           ctx.restore()
         }
 
-        function chosenByProb(rangeObj) {
+        const chosenByProb = (rangeObj) => {
           //Return a key from the rangeObj randomly according
           //to the probabilityies of each:
-          var arrTotProb = Object.keys(rangeObj).reduce(function(arr, key){
-            var arrKeyRep = repeatArr([key], Math.floor(rangeObj[key]));
+          let arrTotProb = Object.keys(rangeObj).reduce((arr, key) => {
+            let arrKeyRep = repeatArr([key], Math.floor(rangeObj[key]));
             return arr.concat(arrKeyRep)
           }, []);
 
 
-          var rdm = Math.floor(Math.random()*arrTotProb.length);
+          let rdm = Math.floor(Math.random()*arrTotProb.length);
 
           return arrTotProb[rdm];
         }
 
-        function drawHair(ctx, params) {
+        const drawHair = (ctx, params) => {
 
-          var x = Number(params.x) || 0,
+          let x = Number(params.x) || 0,
               y = Number(params.y) || 0,
               hair = params.hair || {color: "ALL"},
               sexProbs = params.sex || "ALL",
-              determined = params.determined || false;
-              if(typeof sexProbs === "object"){
-                var sex = chosenByProb(sexProbs);
-              } else if(determined) {
-                var sex = params.sex;
-              } else {
-                var sex = ((Math.random() > 0.5) ? "female" : "male");
-              }
+              determined = params.determined || false,
+              sex,
+              hairColor,
+              faceColor;
 
+          //Select the sex of the new face
+          if(typeof sexProbs === "object"){
+            sex = chosenByProb(sexProbs);
+          } else if(determined) {
+            sex = params.sex;
+          } else {
+            sex = ((Math.random() > 0.5) ? "female" : "male");
+          }
 
           //Draws hair for each face
           if(determined !== true) {
             hair = hair || {};
+            let possibleHairColors;
             if(!hair.color || (hair.color.lenght === 0)){
               //Case no color setted up or setted all, the hair colors
               //will be chosen randomly from all the possible colors
               //in an equally distributed for each main color group
-              var possibleHairColors = joinedCategories(hair_colors, true)
+              possibleHairColors = joinedCategories(hair_colors, true)
             } else {
-              var typeHairChosen = chosenByProb(hair.color);
-              var possibleHairColors = hair_colors[typeHairChosen];
+              let typeHairChosen = chosenByProb(hair.color);
+              possibleHairColors = hair_colors[typeHairChosen];
             }
             //Random from all the possibilities
-            var rdm = Math.floor(Math.random()*possibleHairColors.length),
-                hairColor = possibleHairColors[rdm];
+            let rdm = Math.floor(Math.random()*possibleHairColors.length);
+
+            hairColor = possibleHairColors[rdm];
           } else {
             hairColor = hair.color;
           }
-
-
           //Drawing hair
           ctx.fillStyle = hairColor;
 
@@ -189,8 +200,8 @@
               ctx.moveTo(x, y);
               //From 0 to 180 anticlockwise
               ctx.arc(x, y, face_radius, 0.2, Math.PI - 0.2, true);
-              var actualX = x + face_radius*Math.cos(0.4);
-              var actualY = y + face_radius*Math.cos(0.4);
+              let actualX = x + face_radius*Math.cos(0.4);
+              let actualY = y + face_radius*Math.cos(0.4);
               ctx.moveTo(actualX, actualY);
               ctx.lineTo(actualX, y - 10);
               //ctx.lineTo(actualX + 10 , y - 10)
@@ -212,8 +223,8 @@
               ctx.moveTo(x, y);
               //From 0 to 180 anticlockwise
               ctx.arc(x, y, face_radius, 0, Math.PI, true);
-              var overlapXFaceHair = (1-face_hair_lateral_overlap_perc)*face_radius;
-              var overlapYFaceHair = (1-2*face_hair_lateral_overlap_perc)*face_radius;
+              let overlapXFaceHair = (1-face_hair_lateral_overlap_perc)*face_radius;
+              let overlapYFaceHair = (1-2*face_hair_lateral_overlap_perc)*face_radius;
               ctx.lineTo(x-overlapXFaceHair, y);
               ctx.lineTo(x-overlapXFaceHair, y-overlapYFaceHair);
               ctx.lineTo(x+overlapXFaceHair, y-overlapYFaceHair);
@@ -227,18 +238,18 @@
                   }
         }
 
-        function repeatArr(arr, times) {
+        const repeatArr = (arr, times) => {
           //Returns an array formed by multiple concat of the input arr
           // arr= [a, b, c]  times= 2 -> [a, b, c, a, b, c]
           //used to create a distribution of main colors group
-          var totalArr = [];
-          for(var i = 0; i < times; i ++){
+          let totalArr = [];
+          for(let i = 0; i < times; i ++){
             totalArr = totalArr.concat(arr);
           }
           return totalArr;
         }
 
-        function joinedCategories(category, distributed) {
+        const joinedCategories = (category, distributed) => {
           //For a person property, joins all the values for each category
           //of that property into an array deleting the differences
           //If distributed, the new array will have an equal number of
@@ -249,7 +260,7 @@
             //The distributions is made by first finding a number that is
             //multiple of the lengths of the arrays for each categories.
             //The easyest way to do that is by multiplting all the lengths
-            var mcm = Object.keys(category).reduce(function(tot, subcategory) {
+            let mcm = Object.keys(category).reduce((tot, subcategory) => {
               return tot * category[subcategory].length;
             }, 1);
 
@@ -267,7 +278,7 @@
                               the final arr
 
             */
-            return Object.keys(category).reduce(function(tot, subcategory) {
+            return Object.keys(category).reduce((tot, subcategory) => {
               return tot.concat(
                 repeatArr(category[subcategory], mcm / category[subcategory].length)
               );
@@ -276,38 +287,41 @@
           } else {
             //In case is not distributed, return an array that is just
             //the concatenation of the arrays for each category
-            return Object.keys(category).reduce(function(tot, subcategory) {
+            return Object.keys(category).reduce((tot, subcategory) => {
               return tot.concat(category[subcategory]);
             }, []);
           }
         }
 
-        function drawFace(ctx, params){
+        const drawFace = (ctx, params) => {
 
-          var x = Number(params.x) || 0,
+          let x = Number(params.x) || 0,
               y = Number(params.y) || 0,
               hair = params.hair || {color: "ALL"},
               sex = params.sex || ((Math.random() > 0.5) ? "female" : "male"),
-              determined = params.determined || false;
+              determined = params.determined || false,
+              skinTone;
+
           if(determined) {
-            var skinTone = params.skinTone;
+            skinTone = params.skinTone;
           } else  if(typeof params.skinTone === "object"){
-            var skinTone = chosenByProb(params.skinTone).toUpperCase();
+            skinTone = chosenByProb(params.skinTone).toUpperCase();
           } else{
-            var skinTone = "ALL";
+            skinTone = "ALL";
           }
 
           //Drawing an individual face on the ctx context
           //x and y point to the center of the new face
+          let possibleFaceColors, faceColor;
           if(determined !== true) {
             if(!skinTone || skinTone.toLowerCase()=="all") {
-              var possibleFaceColors = joinedCategories(face_colors, true)
+              possibleFaceColors = joinedCategories(face_colors, true)
             } else {
-              var possibleFaceColors = face_colors[skinTone];
+              possibleFaceColors = face_colors[skinTone];
             }
             //random chosing of the color face
-            var rdm = Math.floor(Math.random()*possibleFaceColors.length),
-                faceColor = possibleFaceColors[rdm];
+            let rdm = Math.floor(Math.random()*possibleFaceColors.length);
+            faceColor = possibleFaceColors[rdm];
           } else {
             faceColor = skinTone;
           }
@@ -328,14 +342,14 @@
               //The source is the hair and the destination is the raund face
               //We want the hair on top the face
               ctx.globalCompositeOperation = "source-over";
-              hairOptions = {
+              let hairOptions = {
                 'x': x,
                  'y': y,
                  'hair': hair,
                  'determined': determined,
                  'sex': sex
               }
-              var results = drawHair(ctx, hairOptions);
+              let results = drawHair(ctx, hairOptions);
               console.log(results);
             ctx.restore();
             return {
@@ -345,9 +359,9 @@
                     };
         }
 
-        function drawMultitudes(ctx, params) {
+        const drawMultitudes = (ctx, params) => {
 
-          var x = Number(params.x) || 0,
+          let x = Number(params.x) || 0,
               y = Number(params.y) || 0,
               num = Number(params.num) || 0,
               col = Number(params.col) || 1,
@@ -361,15 +375,15 @@
           //As the faces are overlaped in the vertical direction,
           //distanceY contains the distance between the center of two
           //consecutive vertival faces taking int account the overlap
-          var distanceY = 2*face_radius*(1-face_overlap_perc);
+          let distanceY = 2*face_radius*(1-face_overlap_perc),
           //Number of rows of the col with highest num of rows
-          var maxRow = Math.ceil(num/col);
+              maxRow = Math.ceil(num/col),
           //More like the distance between the centers of the top face and the
           //bottom face
-          var height = (maxRow - 1)*distanceY;
+              height = (maxRow - 1)*distanceY;
 
           //Array that will save all the chars of each face for next renderings
-          var facesChars = [];
+          let facesChars = [];
           ctx.save();
             //The faces are drawed from bottom-left to top-right
             //We want that as we go down, the faces are on-top the previous
@@ -378,23 +392,23 @@
             //to be drawn
             ctx.globalCompositeOperation = "destination-over";
             //We do this until we have finished all the faces(num == 0)
-            for(var r = 0; num !== 0; r++ ) {
+            for(let r = 0; num !== 0; r++ ) {
               //Until we reached the final column or we finished the faces
-              for(var c = 0; c < col && num !== 0; c ++) {
+              for(let c = 0; c < col && num !== 0; c ++) {
                   //From left to right on separations of a full face
-                var posx = x + face_radius*2*c,
+                let posx = x + face_radius*2*c,
                   //From bottom to top with ovelaped faces
                     posy = y + height - face_radius*2*r*(1-face_overlap_perc);
                     //Are faces already determined
-                    var determined = group.facesChars !== undefined;
+                    let determined = group.facesChars !== undefined;
                   //draw each face
                   if(determined) {
-                    var groupFace = r*col + c;
+                    let groupFace = r*col + c;
                     skinTone = group.facesChars[groupFace].faceColor;
                     hair.color = group.facesChars[groupFace].hairColor;
                     sex = group.facesChars[groupFace].sex;
                   }
-                  faceOptions = {
+                  let faceOptions = {
                     x: posx,
                     y: posy,
                     hair: hair,
@@ -403,7 +417,7 @@
                     skinTone: skinTone
                   }
 
-                  var faceChars = drawFace(ctx,
+                  let faceChars = drawFace(ctx,
                                           faceOptions);
                   facesChars.push(faceChars);
                 num--;
@@ -415,34 +429,36 @@
         }
 
         /*function oneOut(ctx, num, col, x, y, skinTone) {
-          var hair = {color: "blonde"};
-          var distanceY = 2*face_radius*(1-face_overlap_perc);
-          var maxRow = Math.ceil(num/col);
-          var height = (maxRow - 1)*distanceY;
-          var width = 2*face_radius*col;
+          let hair = {color: "blonde"};
+          let distanceY = 2*face_radius*(1-face_overlap_perc);
+          let maxRow = Math.ceil(num/col);
+          let height = (maxRow - 1)*distanceY;
+          let width = 2*face_radius*col;
           drawFace(ctx, x, y + height/2, skinTone, hair);
           ctx.font = "30px Arial";
-          var text = ctx.measureText("out");
+          let text = ctx.measureText("out");
           ctx.fillText("out",
                        x + face_radius + (multitudes_distance - text.width)/2,
                        8 + y + height/2);
           drawMultitudes(ctx, num, col,
                           x + multitudes_distance + 2 * face_radius , y, skinTone)
-          var textW = ctx.measureText(num).width;
+          let textW = ctx.measureText(num).width;
           ctx.fillText(num,
                        x + multitudes_distance +  face_radius + (width - textW) /2 ,
                        40 + y + height);
         }*/
 
-        function heightFromRows(n_rows) {
+        const heightFromRows = (n_rows) => {
           //Returns height in pixels of a column of n_rows of faces
           //according to the overlapping
-          var distanceY = 2*face_radius*(1-face_overlap_perc);
+          let distanceY = 2*face_radius*(1-face_overlap_perc);
           return 2*face_radius + (n_rows - 1) * distanceY;
         }
 
-        function ofEvery(ctx, params) {
-          var groups = params.groups || [],
+
+
+        const ofEvery = (ctx, params) => {
+          let groups = params.groups || [],
               x = params.x || 0,
               y = params.y || 0,
               defaultValues = params.defaultValues || {};
@@ -455,10 +471,10 @@
 
             //Vertical distance between the center of two consecutive
             //faces in a column
-            var distanceY = 2*face_radius*(1-face_overlap_perc);
+            let distanceY = 2*face_radius*(1-face_overlap_perc),
             //Starting point of the center of the most left faces in all the
             //the diagram
-            var distX = x ,
+                distX = x ,
 
                 maxHeight = 0,
                 totalNum = 0,
@@ -466,8 +482,8 @@
 
 
 
-            groups.forEach(function(group) {
-              var numRows = Math.ceil(group.num / group.col),
+            groups.forEach(group => {
+              let numRows = Math.ceil(group.num / group.col),
                   heightGroup = heightFromRows(numRows);
 
               maxHeight = (maxHeight > heightGroup) ? maxHeight : heightGroup;
@@ -478,12 +494,12 @@
 
             ctx.save();
               ctx.font = top_font_size + "px " + top_font;
-              var cvWidth = ctx.canvas.width,
+              let cvWidth = ctx.canvas.width,
               //horizontal center of the canvas
                   xCenterCv = ctx.width / 2,
                   //Text of the group
                   text = "Out of " + totalNum + " " + type_people,
-                  textWidth = ctx.measureText(text).width;
+                  textWidth = ctx.measureText(text).width,
                   //Pos of the text
                   posXText = (cvWidth - textWidth) / 2;
 
@@ -491,8 +507,8 @@
               ctx.fillText(text , posXText, top_font_pos_y);
             ctx.restore();
 
-            groups.map(function(group, ix) {
-              var num = group.num,
+            groups.map((group, ix) => {
+              let num = group.num,
                   col = group.col,
                   //highest num of rows for this group eleent
                   maxRow = Math.ceil(num/col),
@@ -502,7 +518,7 @@
                   width = 2*face_radius*col,
                   //Done it so all the bottom line of each multitude
                   //is at the same level
-                  posy = y + (maxHeight - heightFromRows(maxRow))/2 ;
+                  posy = y + (maxHeight - heightFromRows(maxRow))/2 ,
               //Draw group!
               multitudesOptions = {
                 x: distX,
@@ -519,17 +535,17 @@
 
               ctx.save()
                 ctx.font = multitudes_font_size + "px " + multitudes_font;
-                var xCenterMultitude = distX + width/2 - face_radius;
+                let xCenterMultitude = distX + width/2 - face_radius;
                 //"10 are" text
-                var firstText = group.num + " are";
-                var numAreTextWidth = ctx.measureText(firstText).width;
+                let firstText = group.num + " are";
+                let numAreTextWidth = ctx.measureText(firstText).width;
                 //centered with respect to the multitude graph and at a distance
                 //from the bottom
                 ctx.fillText(firstText,
                                 xCenterMultitude - numAreTextWidth / 2,
                                 y + maxHeight + multitudes_text_distance);
                 //"politicians" text
-                var secondText = group.name,
+                let secondText = group.name,
                     secondTextWidth = ctx.measureText(secondText).width;
                 //centered with respect to the multitude graph and at a distance
                 //from the bottom and the firstText
@@ -545,26 +561,10 @@
 
         //array that will have the info that it is going to be
         //rendered for each group
-        var testgroups = [
-          {
-            col:3,
-            hair:{color:"ALL"},
-            name:"Africans",
-            num: 10,
-            skinTone: "DARK"
-          },
-          {
-            col:3,
-            hair:{color:"ALL"},
-            name:"Africans",
-            num: 10,
-            skinTone: "ALL"
-          }
-        ];
 
-        var groups = [];
+        let groups = [];
 
-        function draw(params, e) {
+        const draw = (params, e) => {
           //Main function
           params = params || {};
           if(params.number){
@@ -587,29 +587,29 @@
           //Erase all the previous drawing
           resetCanvas(ctx);
 
-          var cvw = ctx.canvas.width,
+          let cvw = ctx.canvas.width,
               cvh = cv.clientHeight,
-              totalCols = groups.reduce(function(cols, group) {
-            return cols + group.col;
-          }, 0),
-              numGroups = groups.length;
+              totalCols = groups.reduce((cols, group) => {
+                return cols + group.col;
+              }, 0),
+              numGroups = groups.length,
               totalDrawWidth = totalCols * 2 * face_radius
                               + (numGroups - 1) * multitudes_distance;
           //Posx indicates the x position of the center of the most left
           //face of the most left multitude
-          var posx = (cvw - totalDrawWidth) / 2,
-              maxRows = groups.reduce(function(max, group) {
-                nrows = Math.ceil(group.num / group.col);
+          let posx = (cvw - totalDrawWidth) / 2,
+              maxRows = groups.reduce((max, group) => {
+                let nrows = Math.ceil(group.num / group.col);
                 return (max > nrows) ? max : nrows;
               }, 0),
               maxHeight = heightFromRows(maxRows);
 
           //Posy indicates the y position of the center of top face of the
           //the most column of the most left multitude
-          var posy = (cvh - maxHeight) / 2;
+          let posy = (cvh - maxHeight) / 2;
 
           //Drawing the mulltides
-          var ofEveryParams = {
+          let ofEveryParams = {
             groups: groups || [],
             x: posx,
             y: posy,
@@ -622,7 +622,7 @@
           ofEvery(ctx, ofEveryParams);
         }
 
-        function updateCanva(options) {
+        const updateCanva = (options) => {
           //Changes the main parametres of the drawing
           //and redraws it
           type_people = options.type_people
@@ -652,8 +652,67 @@
 
         }
 
-    </script>
-    <script type="text/jsx">
+        let testgroups = [
+          {
+            col:3,
+            hair:{color:"ALL"},
+            name:"Africans",
+            num: 10,
+            skinTone: "DARK"
+          },
+          {
+            col:3,
+            hair:{color:"ALL"},
+            name:"Africans",
+            num: 10,
+            skinTone: "ALL"
+          }
+        ];
+        const testRepeatArr = () => {
+          let arrBefore = ["a"],
+              arrAfter = ["a", "a", "a"];
+          //Makes them immutable.
+          deepFreeze(arrBefore);
+          deepFreeze(arrAfter);
+          console.log(  expect(repeatArr(arrBefore, 3)));
+          //test
+          expect(repeatArr(arrBefore, 3)).toEqual(arrAfter);
+          expect(repeatArr([],3)).toEqual([]);
+
+        }
+
+        const testJoinedCategories = () => {
+          let catBefore = {
+                p1 : ["a", "b", "c"],
+                p2 : ["d", "e"],
+                p3 : ["f"]
+              },
+              catAfter = ["a", "b", "c", "d", "e", "f"],
+              catAfterDist = [
+                                "a", "b", "c", "a", "b", "c",
+                                "d", "e", "d", "e", "d", "e",
+                                "f", "f", "f", "f", "f", "f"
+                            ];
+          deepFreeze(catBefore);
+          deepFreeze(catAfter);
+          deepFreeze(catAfterDist);
+
+          expect(joinedCategories(catBefore)).toEqual(catAfter);
+          expect(joinedCategories(catBefore, true)).toEqual(catAfterDist);
+
+        }
+
+        const tests = () => {
+          testRepeatArr();
+          testJoinedCategories();
+          console.log("tests completed")
+        }
+        tests();
+  //------------------------------------------------------------------------//
+  //------------------------------------------------------------------------//
+  //------------------------------------------------------------------------//
+        //REACT
+
       class Welcome extends React.Component {
         constructor(props) {
           super(props);
@@ -662,7 +721,7 @@
           }
         }
         changeHandler(e) {
-          var newName = e.target.value;
+          let newName = e.target.value;
           updateCanva({type_people: newName});
           this.setState({
             typepeople: newName
@@ -706,7 +765,7 @@
         }
         changeHandler(e) {
           e.preventDefault();
-          var self = this;
+          let self = this;
           this.setState({
             number: self.refs.number.value,
             namegroup: self.refs.namegroup.value,
@@ -728,7 +787,7 @@
           draw();
         }
         /*checkboxHandler(color) {
-          var valColor = this.state.hairs[color],
+          let valColor = this.state.hairs[color],
               newState = this.state.hairs;
           newState[color] = !valColor;
           this.setState({
@@ -736,26 +795,26 @@
           });
         }*/
         hairRangeHandler(e) {
-          var self = this,
+          let self = this,
               color = e.target.name,
               prevVal = self.state.hairrange[color],
               actualVal = Number(e.target.value),
-              variation = actualVal - prevVal,
+              letiation = actualVal - prevVal,
               sumValOtherColors = Object.keys(self.state.hairrange)
-                                  .reduce(function(tot, col) {
+                                  .reduce((tot, col) => {
                                     if(col !== color) {
                                       tot += self.state.hairrange[col];
                                     }
                                     return tot;
                                   }, 0),
              newHairRange = Object.keys(self.state.hairrange)
-                            .reduce(function(obj, col) {
+                            .reduce((obj, col) => {
                               if(col === color) {
                                 obj[col] = actualVal;
                               } else {
-                                var valCol = self.state.hairrange[col];
+                                let valCol = self.state.hairrange[col];
                                 obj[col] =  valCol - valCol
-                                            * variation / sumValOtherColors;
+                                            * letiation / sumValOtherColors;
                               }
                               return obj;
                             }, {});
@@ -765,14 +824,14 @@
               })
         }
         sexRangeHandler(e) {
-          var sexChanged = e.target.name,
+          let sexChanged = e.target.name,
               val = Number(e.target.value);
 
           if(sexChanged === "male") {
-            var valMale = val,
+            let valMale = val,
                 valFemale = 100 - val;
           } else {
-            var valMale = 100 - val,
+            let valMale = 100 - val,
                 valFemale = val
           }
 
@@ -784,13 +843,13 @@
           });
         }
         skincolorRangeHandler(e) {
-          var skinChanged= e.target.name,
+          let skinChanged= e.target.name,
               val = Number(e.target.value);
           if(skinChanged === "light") {
-            var lightVal = val,
+            let lightVal = val,
                 darkVal = 100 - val;
           } else {
-            var lightVal = 100 - val,
+            let lightVal = 100 - val,
                 darkVal = val;
           }
           this.setState({
@@ -944,8 +1003,8 @@
           }
         }
         changeHandler(e) {
-          var self = this;
-          var state = this.state;
+          let self = this;
+          let state = this.state;
           updateCanva({
             multitudes_distance: self.refs.multitudesdistance.value,
             face_radius: self.refs.faceradius.value,
@@ -1020,8 +1079,8 @@
           }
         }
         changeHandler(e) {
-          var self = this;
-          var state = this.state;
+          let self = this;
+          let state = this.state;
           updateCanva({
             top_font_size:  self.refs.topfontsize.value,
             multitudes_font_size:  self.refs.multitudesfontsize.value,
@@ -1158,8 +1217,8 @@
                             "fontsconfigurator"
                           ];
         }
-        changeNumPage(variation) {
-          var newPageNum = this.state.pageNum + variation,
+        changeNumPage(letiation) {
+          let newPageNum = this.state.pageNum + letiation,
               pageName = this.pageNames[newPageNum];
           this.setState({
             pageNum: newPageNum,

@@ -11,7 +11,12 @@
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js">
     </script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js"></script>
+    <script
+      src="http://cdnjs.cloudflare.com/ajax/libs/react/0.12.2/JSXTransformer.js">
+    </script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/expect.js/0.2.0/expect.js">
+    </script>
   </head>
   <body>
   <div id="root">
@@ -63,6 +68,21 @@
     }
     render();
     store.subscribe(render);
+
+    const testFunc = (obj) => {
+      obj.hola = 2;
+      return obj;
+    }
+    const test1 = () => {
+      let objBefore = {},
+          objAfter = {hola:1};
+
+      expect(testFunc(objBefore)).isEqual(objAfter);
+
+      expect(5).to.be.a("number");
+
+    }
+    console.log("tests passed");
   </script>
 
 
